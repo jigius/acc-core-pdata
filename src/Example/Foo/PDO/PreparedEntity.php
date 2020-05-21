@@ -1,6 +1,19 @@
 <?php
+/**
+ * This file is part of the jigius/acc-core-pdata library
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * @copyright Copyright (c) 2020 Jigius <jigius@gmail.com>
+ * @link https://github.com/jigius/acc-core-pdata GitHub
+ */
+
+declare(strict_types=1);
+
 namespace Acc\Core\PersistentData\Example\Foo\PDO;
 
+use Acc\Core\PersistentData\EntityOptionsInterface;
 use Acc\Core\PersistentData\Example\Foo\EntityInterface;
 use Acc\Core\PrinterInterface;
 use DateTimeImmutable;
@@ -102,6 +115,15 @@ final class PreparedEntity implements EntityInterface, PrinterInterface
     public function withOption(string $key, $val): EntityInterface
     {
         return new self($this->orig->withOption($key, $val));
+    }
+
+    /**
+     * @inheritDoc
+     * @return EntityOptionsInterface
+     */
+    public function options(): EntityOptionsInterface
+    {
+        return $this->orig->options();
     }
 
     /**
