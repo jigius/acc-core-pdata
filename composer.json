@@ -1,0 +1,30 @@
+{
+    "name": "jigius/acc-core-pdata",
+    "description": "An yet another simple library for working with persistent storages",
+    "type": "package",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "jigius",
+            "email": "jigius@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=7.3.0",
+        "ext-pdo": "*",
+        "jigius/acc-core": "dev-master",
+        "ext-mbstring": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Acc\\Core\\PersistentData\\": "src/"
+        }
+    },
+    "require-dev": {
+    },
+    "repositories": [{
+        "type": "vcs",
+        "url": "git@github.com:jigius/acc-core.git"
+    }]
+}
