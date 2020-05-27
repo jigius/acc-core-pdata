@@ -11,10 +11,9 @@
 
 declare(strict_types=1);
 
-namespace Acc\Core\PersistentData\PDO;
+namespace Acc\Core\PersistentData;
 
 use Acc\Core\MediaInterface;
-use Acc\Core\PersistentData\EntityOptionsInterface;
 use Acc\Core\PrinterInterface;
 use LogicException;
 
@@ -30,9 +29,9 @@ final class VanillaEntityOptions implements EntityOptionsInterface
     private array $i;
 
     /**
-     * @var array A prepared data for printing
+     * @var array|null A prepared data for printing
      */
-    private array $o;
+    private ?array $o = null;
 
     /**
      * VanillaEntityOptions constructor.
@@ -55,7 +54,7 @@ final class VanillaEntityOptions implements EntityOptionsInterface
             throw new LogicException("print job is already finished");
         }
         $obj = $this->blueprinted();
-        $obj->i['key'] = $val;
+        $obj->i[$key] = $val;
         return $obj;
     }
 

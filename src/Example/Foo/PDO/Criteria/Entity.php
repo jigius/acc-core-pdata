@@ -13,18 +13,23 @@ declare(strict_types=1);
 
 namespace Acc\Core\PersistentData\Example\Foo\PDO\Criteria;
 
-use Acc\Core\PersistentData\CriteriaInterface;
+use Acc\Core\PersistentData\PDO\{
+    ExtendedPDOInterface,
+    PDOStatementInterface,
+    Value,
+    Values,
+    ValuesInterface
+};
+use Acc\Core\PersistentData\RequestInterface;
 use Acc\Core\PersistentData\Example\Foo\EntityInterface;
-use Acc\Core\PersistentData\PDO\PDOInterface;
 use Acc\Core\PrinterInterface;
-use Iterator, IteratorIterator;
 use DomainException, LogicException, DateTimeImmutable;
 
 /**
  * Class Entity
  * @package Acc\Core\PersistentData\Example\Foo\PDO\Criteria
  */
-final class Entity implements CriteriaInterface, PrinterInterface
+final class Entity implements RequestInterface, PrinterInterface
 {
     /**
      * @var EntityInterface An entity. Its params are used for query
@@ -45,7 +50,13 @@ final class Entity implements CriteriaInterface, PrinterInterface
     /**
      * @var array|null A prepared data for printing
      */
-    private array $o;
+    private ?array $o = null;
+
+    /**
+     * A last executed request
+     * @var PDOStatementInterface|null
+     */
+    private ?PDOStatementInterface $statement = null;
 
     /**
      * Entity constructor.
@@ -71,8 +82,7 @@ final class Entity implements CriteriaInterface, PrinterInterface
         if ($this->o !== null) {
             throw new LogicException("print job is already finished");
         }
-        $obj = new self($this->entity, $this->locked);
-        $obj->i = $this->i;
+        $obj = $this->blueprinted();
         $obj->i[$key] = $val;
         return $obj;
     }
@@ -87,8 +97,9 @@ final class Entity implements CriteriaInterface, PrinterInterface
         if (empty($this->i)) {
             throw new LogicException("print job has not been run");
         }
-        $obj = new self($this->entity, $this->locked);
-        $obj->o = $this->i;
+        $obj = $this->blueprinted();
+        $obj->o = $obj->i;
+        $obj->i = [];
         return $obj;
     }
 
@@ -102,29 +113,31 @@ final class Entity implements CriteriaInterface, PrinterInterface
         }
         return
             $printer
-                ->with('input', $this->i)
-                ->with('query', $this->sqlStatement())
-                ->with('values', $this->values())
+                ->with('statement', $this->statement)
                 ->finished();
     }
 
     /**
      * @inheritDoc
      */
-    public function items(PDOInterface $pdo): Iterator
+    public function executed(ExtendedPDOInterface $pdo): RequestInterface
     {
         if ($this->o === null) {
-            return $this->entity->printed($this)->items($pdo);
+            return $this->entity->printed($this)->executed($pdo);
         }
         $this->validate();
-        return
-            new IteratorIterator(
+        $obj = $this->blueprinted();
+        $obj
+            ->statement =
                 $pdo
-                    ->query(
-                        $this->sqlStatement(),
+                    ->prepared(
+                        $this->sqlStatement()
+                    )
+                    ->withValues(
                         $this->values()
                     )
-            );
+                    ->executed();
+        return $obj;
     }
 
     /**
@@ -150,13 +163,13 @@ final class Entity implements CriteriaInterface, PrinterInterface
         $undefined = null,
         $unknown = null
     ) {
-        if (!array_key_exists($key, $this->i)) {
+        if (!array_key_exists($key, $this->o)) {
             return $unknown;
         }
         return
-            $this->i[$key] !== null?
+            $this->o[$key] !== null?
                 (
-                    $defined === null? $this->i[$key]: $defined
+                    $defined === null? $this->o[$key]: $defined
                 ):
                     $undefined;
     }
@@ -188,11 +201,11 @@ final class Entity implements CriteriaInterface, PrinterInterface
 
     /**
      * Query's values
-     * @return array
+     * @return ValuesInterface
      */
-    private function values(): array
+    private function values(): ValuesInterface
     {
-        return
+        $arr =
             array_filter(
                 [
                     ':id' => $this->v3('id'),
@@ -200,14 +213,17 @@ final class Entity implements CriteriaInterface, PrinterInterface
                     ':created' =>
                         $this->processed(
                             $this->v3('created'),
-                            function (DateTimeImmutable $dt) {
+                            function (DateTimeImmutable $dt = null): ?string {
+                                if ($dt === null) {
+                                    return null;
+                                }
                                 return $dt->format("Y-m-d H:i:s");
                             }
                         ),
                     ':updated' =>
                         $this->processed(
                             $this->v3('updated'),
-                            function (DateTimeImmutable $dt = null) {
+                            function (DateTimeImmutable $dt = null): ?string {
                                 if ($dt === null) {
                                     return $dt;
                                 }
@@ -219,6 +235,18 @@ final class Entity implements CriteriaInterface, PrinterInterface
                     return $itm !== null;
                 }
             );
+        $vals = new Values();
+        $bp = new Value();
+        foreach ($arr as $key => $val) {
+            $vals =
+                $vals
+                    ->with(
+                        $bp
+                            ->withName($key)
+                            ->withValue($val)
+                    );
+        }
+        return $vals;
     }
 
     /**
@@ -235,12 +263,25 @@ final class Entity implements CriteriaInterface, PrinterInterface
         if (array_reduce(
                 $fields,
                 function ($carry, $f) {
-                    return $carry || isset($this->i[$f]);
+                    return $carry || isset($this->o[$f]);
                 },
                 false
             ) === false
         ) {
             throw new DomainException("invalid data");
         }
+    }
+
+    /**
+     * Clones the instance
+     * @return $this
+     */
+    private function blueprinted(): self
+    {
+        $obj = new self($this->entity, $this->locked);
+        $obj->i = $this->i;
+        $obj->o = $this->o;
+        $obj->statement = $this->statement;
+        return $obj;
     }
 }

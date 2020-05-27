@@ -11,17 +11,13 @@
 
 declare(strict_types=1);
 
-namespace Acc\Core\PersistentData\PDO\Vendor;
+namespace Acc\Core\PersistentData\PDO;
 
 /**
- * Interface PDOStatementInterface
- * @package Acc\Core\PersistentData\PDO\Vendor
+ * Interface ValuesInterface
+ * @package Acc\Core\PersistentData\PDO
  */
-interface PDOStatementInterface extends \Traversable
+interface ValuesInterface extends BindValueInterface
 {
-    /**
-     * Returns the number of rows affected by the last SQL statement
-     * @return int the number of rows.
-     */
-    public function rowCount(): int;
+    public function with(ValueInterface $value): ValuesInterface;
 }

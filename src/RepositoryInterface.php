@@ -24,16 +24,15 @@ use Iterator;
 interface RepositoryInterface extends MediaInterface
 {
     /**
-     * Pulls from the repository items those satisfied to passed criteria
-     * @param CriteriaInterface $criteria
+     * Pulls items those satisfied an executed request
      * @return EntitiesInterface
      */
-    public function pulled(CriteriaInterface $criteria): Iterator;
+    public function pulled(): Iterator;
 
     /**
-     * Passes a request into repository
+     * Executes a passed request
      * @param RequestInterface $request
      * @return RepositoryInterface
      */
-    public function requested(RequestInterface $request): RepositoryInterface;
+    public function executed(RequestInterface $request): RepositoryInterface;
 }

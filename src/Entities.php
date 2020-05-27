@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace Acc\Core\PersistentData;
 
 use Acc\Core\PrinterInterface;
-use Iterator, OutOfBoundsException, LogicException;
+use Iterator, OutOfBoundsException, LogicException, Traversable;
 
 /**
  * Class Entities
@@ -81,7 +81,11 @@ final class Entities implements EntitiesInterface
     public function current(): EntityInterface
     {
         $f = $this->f;
-        foreach ($this->orig->current() as $key => $val) {
+        $data = $this->orig->current();
+        if ($data === null || $data instanceof Traversable) {
+            throw new OutOfBoundsException("there is no valid entity");
+        }
+        foreach ($data as $key => $val) {
             $f = $f->with($key, $val);
         }
         return $f->finished();

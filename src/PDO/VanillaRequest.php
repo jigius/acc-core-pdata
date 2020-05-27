@@ -13,9 +13,11 @@ declare(strict_types=1);
 
 namespace Acc\Core\PersistentData\PDO\Request;
 
+use Acc\Core\PersistentData\PDO\ExtendedPDOInterface;
+use Acc\Core\PersistentData\PDO\PDOStatementInterface;
+use Acc\Core\PersistentData\PDO\Value;
 use Acc\Core\PrinterInterface;
 use Acc\Core\PersistentData\RequestInterface;
-use Acc\Core\PersistentData\PDO\{PDOInterface, Vendor\PDOStatementInterface};
 
 /**
  * Class VanillaRequest
@@ -38,7 +40,7 @@ final class VanillaRequest implements RequestInterface
      * Executed statement
      * @var PDOStatementInterface|null
      */
-    private PDOStatementInterface $stmt;
+    private ?PDOStatementInterface $statement;
 
     /**
      * VanillaRequest constructor.
@@ -58,22 +60,31 @@ final class VanillaRequest implements RequestInterface
     {
        return
            $printer
-                ->with('query', $this->q)
-                ->with('values', $this->v)
-                ->with('statement', $this->stmt)
+                ->with('statement', $this->statement)
                 ->finished();
     }
 
     /**
      * @inheritDoc
      */
-    public function executed(PDOInterface $pdo): RequestInterface
+    public function executed(ExtendedPDOInterface $pdo): RequestInterface
     {
         if (empty($this->q)) {
             return $this;
         }
         $obj = new self($this->q, $this->v);
-        $obj->stmt = $pdo->query($this->q, $this->v);
+        $bp = new Value();
+        $stmt = $pdo->prepared($this->q);
+        foreach ($this->v as $name => $val) {
+            $stmt =
+                $stmt
+                    ->withValue(
+                        $bp
+                            ->withName($name)
+                            ->withValue($val)
+                    );
+        }
+        $obj->statement = $stmt->executed();
         return $obj;
     }
 }

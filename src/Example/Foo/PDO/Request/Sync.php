@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace Acc\Core\PersistentData\Example\Foo\PDO\Request;
 
 use Acc\Core\PersistentData\Example\Foo\EntityInterface;
-use Acc\Core\PersistentData\PDO\PDOInterface;
+use Acc\Core\PersistentData\PDO\ExtendedPDOInterface;
 use Acc\Core\PersistentData\RequestInterface;
 use Acc\Core\PrinterInterface;
 
@@ -32,19 +32,19 @@ final class Sync implements RequestInterface
     private EntityInterface $entity;
 
     /**
-     * @var RequestInterface
+     * @var RequestInterface|null
      */
-    private RequestInterface $insert;
+    private ?RequestInterface $insert;
 
     /**
-     * @var RequestInterface
+     * @var RequestInterface|null
      */
-    private RequestInterface $update;
+    private ?RequestInterface $update;
 
     /**
-     * @var RequestInterface
+     * @var RequestInterface|null
      */
-    private RequestInterface $resolved;
+    private ?RequestInterface $resolved = null;
 
     /**
      * Sync constructor.
@@ -54,8 +54,8 @@ final class Sync implements RequestInterface
      */
     public function __construct(
         EntityInterface $entity,
-        RequestInterface $insert = null,
-        RequestInterface $update = null
+        ?RequestInterface $insert = null,
+        ?RequestInterface $update = null
     ) {
         $this->entity = $entity;
         $this->insert = $insert;
@@ -71,12 +71,11 @@ final class Sync implements RequestInterface
     }
 
     /**
-     * @param PDOInterface $pdo
-     * @return RequestInterface
+     * @inheritDoc
      */
-    public function executed(PDOInterface $pdo): RequestInterface
+    public function executed(ExtendedPDOInterface $pdo): RequestInterface
     {
-        return $this->resolved()->executed($pdo);
+        return $this->resolved()->resolved->executed($pdo);
     }
 
     /**
@@ -90,9 +89,9 @@ final class Sync implements RequestInterface
         }
         $obj = new self($this->entity, $this->insert, $this->update);
         if ($this->entity->options()->option('persisted', false)) {
-            $obj->resolved = $this->update;
+            $obj->resolved = $this->update ?? new Update($this->entity);
         } else {
-            $obj->resolved = $this->insert;
+            $obj->resolved = $this->insert ?? new Insert($this->entity);
         }
         return $obj;
     }

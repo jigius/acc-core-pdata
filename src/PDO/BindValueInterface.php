@@ -11,16 +11,15 @@
 
 declare(strict_types=1);
 
-namespace Acc\Core\PersistentData\PDO\Vendor;
+namespace Acc\Core\PersistentData\PDO;
+
+use PDOStatement;
 
 /**
- * Class PDOStatement
- * @package Acc\Core\PersistedData\PDO\Vendor
+ * Interface ValuesInterface
+ * @package Acc\Core\PersistentData\PDO
  */
-final class PDOStatement extends \PDOStatement implements PDOStatementInterface
+interface BindValueInterface
 {
-    public function rowCount(): int
-    {
-        return parent::rowCount();
-    }
+    public function bind(PDOStatement $stmt): void;
 }

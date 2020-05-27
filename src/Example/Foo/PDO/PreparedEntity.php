@@ -36,9 +36,9 @@ final class PreparedEntity implements EntityInterface, PrinterInterface
     private array $i;
 
     /**
-     * @var array
+     * @var array|null
      */
-    private array $o;
+    private ?array $o = null;
 
     /**
      * PreparedEntity constructor.
@@ -47,19 +47,14 @@ final class PreparedEntity implements EntityInterface, PrinterInterface
     public function __construct(EntityInterface $entity)
     {
         $this->orig = $entity;
+        $this->i = [];
     }
 
     /**
      * @inheritDoc
-     * @param PrinterInterface $p
-     * @return $this
-     * @throws LogicException
      */
-    public function printed(PrinterInterface $printer): self
+    public function printed(PrinterInterface $printer): PrinterInterface
     {
-        if (empty($this->i)) {
-            throw new LogicException("print job has not been run");
-        }
         if ($this->o === null) {
             return $this->orig->printed($this)->printed($printer);
         }
@@ -72,17 +67,15 @@ final class PreparedEntity implements EntityInterface, PrinterInterface
     }
 
     /**
-     * @param int $id
-     * @return EntityInterface
+     * @inheritDoc
      */
-    public function withId(int $id): EntityInterface
+    public function withId(string $id): EntityInterface
     {
         return new self($this->orig->withId($id));
     }
 
     /**
-     * @param string $memo
-     * @return EntityInterface
+     * @inheritDoc
      */
     public function withMemo(string $memo): EntityInterface
     {
@@ -90,8 +83,7 @@ final class PreparedEntity implements EntityInterface, PrinterInterface
     }
 
     /**
-     * @param DateTimeImmutable $dt
-     * @return EntityInterface
+     * @inheritDoc
      */
     public function withCreated(DateTimeImmutable $dt): EntityInterface
     {
@@ -99,8 +91,7 @@ final class PreparedEntity implements EntityInterface, PrinterInterface
     }
 
     /**
-     * @param DateTimeImmutable|null $dt
-     * @return EntityInterface
+     * @inheritDoc
      */
     public function withUpdated(DateTimeImmutable $dt = null): EntityInterface
     {
@@ -108,9 +99,7 @@ final class PreparedEntity implements EntityInterface, PrinterInterface
     }
 
     /**
-     * @param string $key
-     * @param mixed $val
-     * @return EntityInterface
+     * @inheritDoc
      */
     public function withOption(string $key, $val): EntityInterface
     {
@@ -119,7 +108,6 @@ final class PreparedEntity implements EntityInterface, PrinterInterface
 
     /**
      * @inheritDoc
-     * @return EntityOptionsInterface
      */
     public function options(): EntityOptionsInterface
     {
@@ -128,7 +116,6 @@ final class PreparedEntity implements EntityInterface, PrinterInterface
 
     /**
      * @inheritDoc
-     * @return string
      */
     public function identity(): string
     {
@@ -146,7 +133,6 @@ final class PreparedEntity implements EntityInterface, PrinterInterface
         if ($this->o !== null) {
             throw new LogicException("print job is already finished");
         }
-
         $obj = $this->blueprinted();
         $obj->i[$key] = $val;
         return $obj;
@@ -154,15 +140,14 @@ final class PreparedEntity implements EntityInterface, PrinterInterface
 
     /**
      * @inheritDoc
-     * @return EntityInterface
      */
     public function finished(): EntityInterface
     {
-        if (empty($this->i)) {
-            throw new LogicException("print job has not been run");
+        if ($this->o !== null) {
+            throw new LogicException("print job is already finished");
         }
         $obj = $this->blueprinted();
-        $obj->o = $this->i;
+        $obj->o = $obj->i;
         $obj->i = [];
         return $obj;
     }
@@ -175,6 +160,7 @@ final class PreparedEntity implements EntityInterface, PrinterInterface
     {
         $obj = new self($this->orig);
         $obj->i = $this->i;
+        $obj->o = $this->o;
         return $obj;
     }
 
@@ -183,7 +169,7 @@ final class PreparedEntity implements EntityInterface, PrinterInterface
      */
     private function validate(): void
     {
-        if (!empty($this->i['updated']) && $this->i['updated'] < $this->i['created']) {
+        if (!empty($this->o['updated']) && $this->i['updated'] < $this->o['created']) {
             throw new DomainException("the value of field `update` is invalid");
         }
     }
@@ -199,11 +185,11 @@ final class PreparedEntity implements EntityInterface, PrinterInterface
             'memo' => 255
         ];
         foreach ($fs as $name => $len) {
-            if (empty($this->i[$name])) {
+            if (empty($this->o[$name])) {
                 continue;
             }
-            if (mb_strlen($this->i[$name]) > $len) {
-                $obj->i[$name] = mb_substr($this->i[$name], 0, $len);
+            if (mb_strlen($this->o[$name]) > $len) {
+                $obj->o[$name] = mb_substr($this->o[$name], 0, $len);
             }
         }
         return $obj;

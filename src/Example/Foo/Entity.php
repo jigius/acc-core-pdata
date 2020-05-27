@@ -13,9 +13,8 @@ declare(strict_types=1);
 
 namespace Acc\Core\PersistentData\Example\Foo;
 
-use Acc\Core\PersistentData\EntityInterface;
 use Acc\Core\PersistentData\EntityOptionsInterface;
-use Acc\Core\PersistentData\PDO\VanillaEntityOptions;
+use Acc\Core\PersistentData\VanillaEntityOptions;
 use Acc\Core\PrinterInterface;
 use DateTimeImmutable, LogicException, Exception;
 
@@ -27,9 +26,9 @@ final class Entity implements EntityInterface
     private array $i;
 
     /**
-     * @var string
+     * @var string|null
      */
-    private string $identity;
+    private ?string $identity = null;
 
     /**
      * @var EntityOptionsInterface
@@ -65,11 +64,11 @@ final class Entity implements EntityInterface
 
     /**
      * @inheritDoc
-     * @param int $id
+     * @param string $id
      * @return EntityInterface
      * @throws Exception
      */
-    public function withId(int $id): EntityInterface
+    public function withId(string $id): EntityInterface
     {
         if (!empty($this->i['id']) && $this->i['id'] !== $id && $this->opts['persisted']) {
             throw new LogicException("the changing value of pk is prohibited");

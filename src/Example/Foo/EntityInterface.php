@@ -24,10 +24,10 @@ interface EntityInterface extends EntityType
 {
     /**
      * Appends info about id
-     * @param int $id
+     * @param string $id
      * @return EntityInterface
      */
-    public function withId(int $id): EntityInterface;
+    public function withId(string $id): EntityInterface;
 
     /**
      * Appends info about memo

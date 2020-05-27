@@ -11,7 +11,7 @@
     ],
     "minimum-stability": "dev",
     "require": {
-        "php": ">=7.3.0",
+        "php": ">=7.4",
         "ext-pdo": "*",
         "jigius/acc-core": "dev-master",
         "ext-mbstring": "*"

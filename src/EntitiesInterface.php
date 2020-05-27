@@ -25,7 +25,7 @@ interface EntitiesInterface extends Iterator
 
     /**
      * Pulls a value from current position of the iterator.
-     * If current position is invalid - usses returned value from passed(if it's passed) `rejected` function
+     * If current position is invalid - uses returned value from passed(if it's passed) `rejected` function
      * @param callable|null $rejected
      * @return EntityInterface
      */

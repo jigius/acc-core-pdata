@@ -14,12 +14,16 @@ declare(strict_types=1);
 namespace Acc\Core\PersistentData\Example\Foo\PDO\Request;
 
 use Acc\Core\PersistentData\Example\Foo\EntityInterface;
-use Acc\Core\PersistentData\PDO\PDOInterface;
-use Acc\Core\PersistentData\PDO\Vendor\PDOStatementInterface;
+use Acc\Core\PersistentData\PDO\{
+    PDOStatementInterface,
+    ExtendedPDOInterface,
+    Value,
+    Values,
+    ValuesInterface
+};
 use Acc\Core\PersistentData\RequestInterface;
 use Acc\Core\PrinterInterface;
-use DomainException;
-use LogicException;
+use DomainException, LogicException, DateTimeImmutable;
 
 /**
  * Class Insert
@@ -34,12 +38,6 @@ final class Insert implements RequestInterface, PrinterInterface
     private EntityInterface $entity;
 
     /**
-     * Executed statement
-     * @var PDOStatementInterface|null
-     */
-    private PDOStatementInterface $stmt;
-
-    /**
      * @var array An input data
      */
     private array $i;
@@ -47,7 +45,12 @@ final class Insert implements RequestInterface, PrinterInterface
     /**
      * @var array|null A prepared data for printing
      */
-    private array $o;
+    private ?array $o = null;
+
+    /**
+     * @var PDOStatementInterface|null
+     */
+    private ?PDOStatementInterface $statement = null;
 
     /**
      * Insert constructor.
@@ -56,6 +59,7 @@ final class Insert implements RequestInterface, PrinterInterface
     public function __construct(EntityInterface $entity)
     {
         $this->entity = $entity;
+        $this->i = [];
     }
 
     /**
@@ -101,20 +105,17 @@ final class Insert implements RequestInterface, PrinterInterface
         }
         return
             $printer
-                ->with('input', $this->i)
-                ->with('query', $this->sqlStatement())
-                ->with('values', $this->values())
-                ->with('statement', $this->stmt)
+                ->with('statement', $this->statement)
                 ->finished();
     }
 
     /**
      * @inheritDoc
-     * @param PDOInterface $pdo
+     * @param ExtendedPDOInterface $pdo
      * @return RequestInterface
      * @throws DomainException
      */
-    public function executed(PDOInterface $pdo): RequestInterface
+    public function executed(ExtendedPDOInterface $pdo): RequestInterface
     {
         if ($this->o === null) {
             return $this->entity->printed($this)->executed($pdo);
@@ -125,7 +126,16 @@ final class Insert implements RequestInterface, PrinterInterface
         }
         $this->validate();
         $obj = new self($this->entity);
-        $obj->stmt = $pdo->query($query, $this->values());
+        $obj
+            ->statement =
+                $pdo
+                    ->prepared(
+                        $this->sqlStatement()
+                    )
+                    ->withValues(
+                        $this->values()
+                    )
+                    ->executed();
         return $obj;
     }
 
@@ -138,7 +148,7 @@ final class Insert implements RequestInterface, PrinterInterface
         if (array_reduce(
                 ['memo'],
                 function ($carry, $key) {
-                    return $carry && !isset($this->i[$key]);
+                    return $carry && isset($this->o[$key]);
                 },
                 true
             ) === false
@@ -148,6 +158,16 @@ final class Insert implements RequestInterface, PrinterInterface
         if ($this->entity->options()->option('persisted', false) === true) {
             throw new DomainException("the operation for this entity is prohibited");
         }
+    }
+
+    /**
+     * @param mixed $val
+     * @param callable $processor
+     * @return mixed
+     */
+    private function processed($val, callable $processor)
+    {
+        return call_user_func($processor, $val);
     }
 
     /**
@@ -214,30 +234,52 @@ final class Insert implements RequestInterface, PrinterInterface
     }
 
     /**
-     * Values for query statement
-     * @return array
+     * Query's values
+     * @return ValuesInterface
      */
-    private function values(): array
+    private function values(): ValuesInterface
     {
-        return
+        $arr =
             array_filter(
                 [
                     ':id' => $this->v3('id'),
                     ':memo' => $this->v3('memo'),
                     ':created' =>
-                        $this->v3(
-                            'created',
-                            $this->i['created']->format("Y-m-d H:i:s")
+                        $this->processed(
+                            $this->v3('created'),
+                            function (?DateTimeImmutable $dt = null) {
+                                if ($dt === null) {
+                                    return null;
+                                }
+                                return $dt->format("Y-m-d H:i:s");
+                            }
                         ),
                     ':updated' =>
-                        $this->v3(
-                            'updated',
-                            $this->i['updated']->format("Y-m-d H:i:s")
-                        )
+                        $this->processed(
+                            $this->v3('updated'),
+                            function (?DateTimeImmutable $dt = null) {
+                                if ($dt === null) {
+                                    return null;
+                                }
+                                return $dt->format("Y-m-d H:i:s");
+                            }
+                        ),
                 ],
                 function ($itm) {
                     return $itm !== null;
                 }
             );
+        $vals = new Values();
+        $bp = new Value();
+        foreach ($arr as $key => $val) {
+            $vals =
+                $vals
+                    ->with(
+                        $bp
+                            ->withName($key)
+                            ->withValue($val)
+                    );
+        }
+        return $vals;
     }
 }

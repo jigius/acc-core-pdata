@@ -13,49 +13,96 @@ declare(strict_types=1);
 
 namespace Acc\Core\PersistentData\PDO;
 
-use Acc\Core\PersistentData\{
-    RepositoryInterface,
-    RequestInterface,
-    CriteriaInterface
-};
+use Acc\Core\PersistentData\{RepositoryInterface, RequestInterface};
 use Acc\Core\PrinterInterface;
-use Iterator;
+use Iterator, IteratorIterator, LogicException;
 
-final class VanillaRepository implements RepositoryInterface
+final class VanillaRepository implements RepositoryInterface, PrinterInterface
 {
     /**
-     * @var PDOInterface
+     * @var ExtendedPDOInterface
      */
-    private PDOInterface $pdo;
+    private ExtendedPDOInterface $pdo;
 
     /**
      * @var RequestInterface|null
      */
-    private RequestInterface $r;
+    private ?RequestInterface $r = null;
+
+    /**
+     * @var array
+     */
+    private array $i;
+
+    /**
+     * @var array|null
+     */
+    private ?array $o = null;
 
     /**
      * Repository constructor.
-     * @param PDOInterface $pdo
+     * @param ExtendedPDOInterface $pdo
      */
-    public function __construct(PDOInterface $pdo)
+    public function __construct(ExtendedPDOInterface $pdo)
     {
         $this->pdo = $pdo;
+        $this->i = [];
+    }
+
+    /**
+     * @inheritDoc
+     * @param string $key
+     * @param mixed $val
+     * @return $this
+     */
+    public function with(string $key, $val): self
+    {
+        if ($this->o !== null) {
+            throw new LogicException("print job is already finished");
+        }
+        $obj = $this->blueprinted();
+        $obj->i[$key] = $val;
+        return $obj;
+    }
+
+    /**
+     * @inheritDoc
+     * @return $this
+     */
+    public function finished(): self
+    {
+        if ($this->o !== null) {
+            throw new LogicException("print job is already finished");
+        }
+        $obj = $this->blueprinted();
+        $obj->o = $obj->i;
+        $obj->i = [];
+        return $obj;
     }
 
     /**
      * @inheritDoc
      */
-    public function pulled(CriteriaInterface $criteria): Iterator
+    public function pulled(): Iterator
     {
-        return $criteria->items($this->pdo);
+        if ($this->r === null) {
+            throw new LogicException("has not being requested yet");
+        }
+        if ($this->o === null) {
+            return $this->r->printed($this)->pulled();
+        }
+        if (!isset($this->o['statement'])) {
+            throw new LogicException("invalid data");
+        }
+        return new IteratorIterator($this->o['statement']->orig());
     }
 
     /**
      * @inheritDoc
      */
-    public function requested(RequestInterface $request): RepositoryInterface
+    public function executed(RequestInterface $request): RepositoryInterface
     {
-        $obj = new self($this->pdo);
+        $obj = $this->blueprinted();
         $obj->r = $request->executed($this->pdo);
         return $obj;
     }
@@ -69,5 +116,18 @@ final class VanillaRepository implements RepositoryInterface
             $printer
                 ->with('request', $this->r)
                 ->finished();
+    }
+
+    /**
+     * Clones the instance
+     * @return $this
+     */
+    private function blueprinted(): self
+    {
+        $obj = new self($this->pdo);
+        $obj->i = $this->i;
+        $obj->o = $this->o;
+        $obj->r = $this->r;
+        return $obj;
     }
 }

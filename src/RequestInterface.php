@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace Acc\Core\PersistentData;
 
 use Acc\Core\MediaInterface;
-use Acc\Core\PersistentData\PDO\PDOInterface;
+use Acc\Core\PersistentData\PDO\ExtendedPDOInterface;
 
 /**
  * Interface RequestInterface
@@ -24,9 +24,9 @@ use Acc\Core\PersistentData\PDO\PDOInterface;
 interface RequestInterface extends MediaInterface
 {
     /**
-     * Executes
-     * @param PDOInterface $pdo
+     * Executes a prepared request
+     * @param ExtendedPDOInterface $pdo
      * @return RequestInterface
      */
-    public function executed(PDOInterface $pdo): RequestInterface;
+    public function executed(ExtendedPDOInterface $pdo): RequestInterface;
 }
