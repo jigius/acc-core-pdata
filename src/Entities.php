@@ -120,4 +120,12 @@ final class Entities implements EntitiesInterface
         }
         return $ret;
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function count(): int
+    {
+
+    }
 }

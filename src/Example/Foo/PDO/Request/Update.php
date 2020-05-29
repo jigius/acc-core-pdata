@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Acc\Core\PersistentData\Example\Foo\PDO\Request;
 
 use Acc\Core\PersistentData\Example\Foo\EntityInterface;
+use Acc\Core\PersistentData\RepositoryInterface;
 use Acc\Core\PersistentData\PDO\{
     PDOStatementInterface,
     ExtendedPDOInterface,
@@ -72,8 +73,7 @@ final class Update implements RequestInterface, PrinterInterface
         if ($this->o !== null) {
             throw new LogicException("print job is already finished");
         }
-        $obj = new self($this->entity);
-        $obj->i = $this->i;
+        $obj = $this->blueprinted();
         $obj->i[$key] = $val;
         return $obj;
     }
@@ -88,8 +88,9 @@ final class Update implements RequestInterface, PrinterInterface
         if ($this->o !== null) {
             throw new LogicException("print job is already finished");
         }
-        $obj = new self($this->entity);
-        $obj->o = $this->i;
+        $obj = $this->blueprinted();
+        $obj->o = $obj->i;
+        $obj->i = [];
         return $obj;
     }
 
@@ -123,7 +124,7 @@ final class Update implements RequestInterface, PrinterInterface
             return $this;
         }
         $this->validate();
-        $obj = new self($this->entity);
+        $obj = $this->blueprinted();
         $obj
             ->statement =
             $pdo
@@ -226,7 +227,9 @@ final class Update implements RequestInterface, PrinterInterface
                         [
                             $this->v3('memo', "`memo`=:memo", "`memo`=NULL"),
                             $this->v3('created', "`created`=:created", "`created`=NULL"),
-                            $this->v3('updated', "`updated`=:updated", "`updated`=NULL", "`updated`=NOW()")
+                            $opts->option('forced', false)?
+                                "`updated`=NOW()":
+                                $this->v3('updated', "`updated`=:updated", "`updated`=NULL", "`updated`=NOW()")
                         ]
                     )
                 ),
@@ -265,8 +268,8 @@ final class Update implements RequestInterface, PrinterInterface
                         ':updated' =>
                             $this->processed(
                                 $this->v3('updated'),
-                                function (?DateTimeImmutable $dt = null) {
-                                    if ($dt === null) {
+                                function (?DateTimeImmutable $dt = null) use ($opts) {
+                                    if ($dt === null || $opts->option('forced', false)) {
                                         return null;
                                     }
                                     return $dt->format("Y-m-d H:i:s");
@@ -290,5 +293,18 @@ final class Update implements RequestInterface, PrinterInterface
                     );
         }
         return $vals;
+    }
+
+    /**
+     * Clones the instance
+     * @return $this
+     */
+    private function blueprinted(): self
+    {
+        $obj = new self($this->entity);
+        $obj->i = $this->i;
+        $obj->o = $this->o;
+        $obj->statement = $this->statement;
+        return $obj;
     }
 }

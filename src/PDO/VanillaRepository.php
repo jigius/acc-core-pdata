@@ -15,7 +15,8 @@ namespace Acc\Core\PersistentData\PDO;
 
 use Acc\Core\PersistentData\{RepositoryInterface, RequestInterface};
 use Acc\Core\PrinterInterface;
-use Iterator, IteratorIterator, LogicException;
+use Iterator, IteratorIterator, EmptyIterator;
+use LogicException, RuntimeException;
 
 final class VanillaRepository implements RepositoryInterface, PrinterInterface
 {
@@ -82,19 +83,26 @@ final class VanillaRepository implements RepositoryInterface, PrinterInterface
 
     /**
      * @inheritDoc
+     * @param bool $strict if it's true - throws an exception if the repository
+     * has not been requested else returns `EmptyIterator` instance
+     * @return Iterator
+     * @throws RuntimeException|LogicException
      */
-    public function pulled(): Iterator
+    public function pulled(bool $strict = false): Iterator
     {
         if ($this->r === null) {
             throw new LogicException("has not being requested yet");
         }
         if ($this->o === null) {
-            return $this->r->printed($this)->pulled();
+            return $this->r->printed($this)->pulled($strict);
         }
-        if (!isset($this->o['statement'])) {
-            throw new LogicException("invalid data");
+        if (!isset($this->o['statement']) && $strict) {
+            throw new RuntimeException("request hasn't being executed yet");
         }
-        return new IteratorIterator($this->o['statement']->orig());
+        return
+            isset($this->o['statement'])?
+                new IteratorIterator($this->o['statement']->orig()):
+                new EmptyIterator();
     }
 
     /**

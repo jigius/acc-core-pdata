@@ -169,7 +169,7 @@ final class PreparedEntity implements EntityInterface, PrinterInterface
      */
     private function validate(): void
     {
-        if (!empty($this->o['updated']) && $this->i['updated'] < $this->o['created']) {
+        if (!empty($this->o['updated']) && $this->o['updated'] < $this->o['created']) {
             throw new DomainException("the value of field `update` is invalid");
         }
     }

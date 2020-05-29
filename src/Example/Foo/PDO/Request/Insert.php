@@ -74,8 +74,7 @@ final class Insert implements RequestInterface, PrinterInterface
         if ($this->o !== null) {
             throw new LogicException("print job is already finished");
         }
-        $obj = new self($this->entity);
-        $obj->i = $this->i;
+        $obj = $this->blueprinted();
         $obj->i[$key] = $val;
         return $obj;
     }
@@ -90,8 +89,9 @@ final class Insert implements RequestInterface, PrinterInterface
         if ($this->o !== null) {
             throw new LogicException("print job is already finished");
         }
-        $obj = new self($this->entity);
-        $obj->o = $this->i;
+        $obj = $this->blueprinted();
+        $obj->o = $obj->i;
+        $obj->i = [];
         return $obj;
     }
 
@@ -125,7 +125,7 @@ final class Insert implements RequestInterface, PrinterInterface
             return $this;
         }
         $this->validate();
-        $obj = new self($this->entity);
+        $obj = $this->blueprinted();
         $obj
             ->statement =
                 $pdo
@@ -281,5 +281,18 @@ final class Insert implements RequestInterface, PrinterInterface
                     );
         }
         return $vals;
+    }
+
+    /**
+     * Clones the instance
+     * @return $this
+     */
+    private function blueprinted(): self
+    {
+        $obj = new self($this->entity);
+        $obj->i = $this->i;
+        $obj->o = $this->o;
+        $obj->statement = $this->statement;
+        return $obj;
     }
 }

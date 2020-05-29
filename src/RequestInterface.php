@@ -15,6 +15,7 @@ namespace Acc\Core\PersistentData;
 
 use Acc\Core\MediaInterface;
 use Acc\Core\PersistentData\PDO\ExtendedPDOInterface;
+use Acc\Core\PrinterInterface;
 
 /**
  * Interface RequestInterface

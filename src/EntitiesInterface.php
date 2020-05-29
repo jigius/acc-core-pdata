@@ -13,9 +13,9 @@ declare(strict_types=1);
 
 namespace Acc\Core\PersistentData;
 
-use Iterator;
+use Iterator, Countable;
 
-interface EntitiesInterface extends Iterator
+interface EntitiesInterface extends Iterator, Countable
 {
     /**
      * Rewinds the position of the iterator
