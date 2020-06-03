@@ -1,7 +1,7 @@
 {
     "name": "jigius/acc-core-pdata",
     "description": "An yet another simple library for working with persistent storages",
-    "type": "package",
+    "type": "library",
     "license": "MIT",
     "authors": [
         {
@@ -27,5 +27,8 @@
     "repositories": [{
         "type": "vcs",
         "url": "git@github.com:jigius/acc-core.git"
-    }]
+    }],
+    "suggest": {
+        "jigius/acc-core-pdata-examples": "Shows trivial examples how to use this library"
+    }
 }
