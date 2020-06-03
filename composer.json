@@ -29,6 +29,6 @@
         "url": "git@github.com:jigius/acc-core.git"
     }],
     "suggest": {
-        "jigius/acc-core-pdata-examples": "Shows trivial examples how to use this library"
+        "jigius/acc-core-pdata-examples": "trivial examples how to use this library"
     }
 }
