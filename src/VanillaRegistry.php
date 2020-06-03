@@ -18,10 +18,10 @@ use Acc\Core\PrinterInterface;
 use LogicException;
 
 /**
- * Class VanillaEntityOptions
+ * Class VanillaRegistry
  * @package Acc\Core\PersistentData
  */
-final class VanillaEntityOptions implements EntityOptionsInterface
+final class VanillaRegistry implements RegistryInterface
 {
     /**
      * @var array An input data
@@ -38,17 +38,14 @@ final class VanillaEntityOptions implements EntityOptionsInterface
      */
     public function __construct()
     {
-        $this->i = [
-            'persisted' => false,
-            'dirty' => false
-        ];
+        $this->i = [];
     }
 
     /**
      * @inheritDoc
      * @return PrinterInterface
      */
-    public function with(string $key, $val): EntityOptionsInterface
+    public function with(string $key, $val): PrinterInterface
     {
         if ($this->o !== null) {
             throw new LogicException("print job is already finished");
@@ -62,7 +59,7 @@ final class VanillaEntityOptions implements EntityOptionsInterface
      * @inheritDoc
      * @return MediaInterface
      */
-    public function finished(): MediaInterface
+    public function finished(): RegistryInterface
     {
         if ($this->o !== null) {
             throw new LogicException("print job is already finished");
@@ -93,7 +90,7 @@ final class VanillaEntityOptions implements EntityOptionsInterface
      * @param null $default
      * @return mixed|null
      */
-    public function option(string $key, $default = null)
+    public function value(string $key, $default = null)
     {
         if (!array_key_exists($key, $this->i)) {
             return $default;

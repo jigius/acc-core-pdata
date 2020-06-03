@@ -19,5 +19,17 @@ namespace Acc\Core\PersistentData\PDO;
  */
 interface ValuesInterface extends BindValueInterface
 {
+    /**
+     * Appends a value into a set
+     * @param ValueInterface $value
+     * @return ValuesInterface
+     */
     public function with(ValueInterface $value): ValuesInterface;
+
+    /**
+     * Defines a filter that is used for filtering out appending values
+     * @param callable $callee
+     * @return ValuesInterface
+     */
+    public function withFilteredOutItems(callable $callee): ValuesInterface;
 }

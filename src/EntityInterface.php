@@ -23,22 +23,16 @@ use Acc\Core\MediaInterface;
 interface EntityInterface extends MediaInterface
 {
     /**
-     * Returns the identity of the instance
-     * @return string
-     */
-    public function identity(): string;
-
-    /**
-     * Assigns an option to the entity
-     * @param string $key The key name of an option
-     * @param mixed $val The value of the an option
+     * Assigns an attribute to the entity
+     * @param string $key The key name of an attribute
+     * @param mixed $val The value of the an attribute
      * @return EntityInterface
      */
-    public function withOption(string $key, $val): EntityInterface;
+    public function withAttr(string $key, $val): EntityInterface;
 
     /**
-     * Returns current entity's options
-     * @return EntityOptionsInterface
+     * Returns current entity's attributes
+     * @return RegistryInterface
      */
-    public function options(): EntityOptionsInterface;
+    public function attrs(): RegistryInterface;
 }

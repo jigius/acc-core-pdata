@@ -16,6 +16,8 @@ namespace Acc\Core\PersistentData\PDO\Request;
 use Acc\Core\PersistentData\PDO\ExtendedPDOInterface;
 use Acc\Core\PersistentData\PDO\PDOStatementInterface;
 use Acc\Core\PersistentData\PDO\Value;
+use Acc\Core\PersistentData\RegistryInterface;
+use Acc\Core\PersistentData\VanillaRegistry;
 use Acc\Core\PrinterInterface;
 use Acc\Core\PersistentData\RequestInterface;
 
@@ -43,14 +45,22 @@ final class VanillaRequest implements RequestInterface
     private ?PDOStatementInterface $statement;
 
     /**
+     * The attributes of the entity
+     * @var RegistryInterface|null
+     */
+    private RegistryInterface $attrs;
+
+    /**
      * VanillaRequest constructor.
      * @param string $query
      * @param array $value
+     * @param RegistryInterface|null $attrs
      */
-    public function __construct(string $query, array $value = [])
+    public function __construct(string $query, array $value = [], ?RegistryInterface $attrs = null)
     {
         $this->q = $query;
         $this->v = $value;
+        $this->attrs = $attrs ?? new VanillaRegistry();
     }
 
     /**
@@ -72,7 +82,7 @@ final class VanillaRequest implements RequestInterface
         if (empty($this->q)) {
             return $this;
         }
-        $obj = new self($this->q, $this->v);
+        $obj =$this->blueprinted();
         $bp = new Value();
         $stmt = $pdo->prepared($this->q);
         foreach ($this->v as $name => $val) {
@@ -85,6 +95,33 @@ final class VanillaRequest implements RequestInterface
                     );
         }
         $obj->statement = $stmt->executed();
+        return $obj;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function attrs(): RegistryInterface
+    {
+        return $this->attrs;
+    }
+
+    /**
+     * @param string $name
+     * @param $val
+     * @return RequestInterface
+     */
+    public function withAttr(string $name, $val): RequestInterface
+    {
+        $obj = $this->blueprinted();
+        $obj->attrs = $this->attrs->with($name, $val);
+        return $obj;
+    }
+
+    private function blueprinted(): self
+    {
+        $obj = new self($this->q, $this->v, $this->attrs);
+        $obj->statement = $this->statement;
         return $obj;
     }
 }

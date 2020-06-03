@@ -133,5 +133,13 @@ abstract class AbstractPDO extends PDO implements ExtendedPDOInterface
     /**
      * @inheritDoc
      */
+    public function lastInsertedId(string $name = null): string
+    {
+        return $this->lastInsertId($name);
+    }
+
+    /**
+     * @inheritDoc
+     */
     abstract public function trx(callable $callee, ...$params);
 }

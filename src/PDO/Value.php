@@ -74,6 +74,14 @@ final class Value implements ValueInterface
     /**
      * @inheritDoc
      */
+    public function defined(): bool
+    {
+        return isset($this->i['value']);
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function bind(PDOStatement $stmt): void
     {
         if (!isset($this->i['name'])) {
@@ -83,7 +91,7 @@ final class Value implements ValueInterface
             ->bindValue(
                 $this->i['name'],
                 $this->i['value'] ?? null,
-                $this->i['value']? $this->type: ExtendedPDOInterface::PARAM_NULL
+                $this->i['value']? $this->type: PDO::PARAM_NULL
             );
     }
 

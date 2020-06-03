@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace Acc\Core\PersistentData\PDO;
 
-use PDO, PDOException;
+use PDOException;
 
 /**
  * Interface ExtendedPDOInterface
@@ -72,4 +72,11 @@ interface ExtendedPDOInterface
      * @throws PDOException
      */
     public function queried(string $query, PDOStatementInterface $stmt = null): PDOStatementInterface;
+
+    /**
+     * Returns the id of a last inserted row
+     * @param string|null $name
+     * @return string
+     */
+    public function lastInsertedId(string $name = null): string;
 }

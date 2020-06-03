@@ -22,9 +22,16 @@ use PDOStatement;
 final class Values implements ValuesInterface
 {
     /**
+     * A set of appended values
      * @var array
      */
     private array $itm;
+
+    /**
+     * A callable object is used for filtering out appending values
+     * @var callable|null
+     */
+    private $f = null;
 
     /**
      * Values constructor.
@@ -35,24 +42,36 @@ final class Values implements ValuesInterface
     }
 
     /**
-     * @param ValueInterface $value
-     * @return ValuesInterface
+     * @inheritDoc
      */
     public function with(ValueInterface $value): ValuesInterface
     {
+        if ($this->f !== null && !call_user_func($this->f, $value)) {
+            return $this;
+        }
         $obj = $this->blueprinted();
         $obj->itm[] = $value;
         return $obj;
     }
 
     /**
-     * @param PDOStatement $stmt
+     * @inheritDoc
      */
     public function bind(PDOStatement $stmt): void
     {
         foreach ($this->itm as $itm) {
             $itm->bind($stmt);
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function withFilteredOutItems(callable $callee): ValuesInterface
+    {
+        $obj = $this->blueprinted();
+        $obj->f = $callee;
+        return $obj;
     }
 
     /**
@@ -63,6 +82,7 @@ final class Values implements ValuesInterface
     {
         $obj = new self();
         $obj->itm = $this->itm;
+        $obj->f = $this->f;
         return $obj;
     }
 }

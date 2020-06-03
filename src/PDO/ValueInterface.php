@@ -39,4 +39,10 @@ interface ValueInterface extends BindValueInterface
      * @return ValueInterface
      */
     public function withValue($value): ValueInterface;
+
+    /**
+     * Checks if the instance has a value
+     * @return bool
+     */
+    public function defined(): bool;
 }

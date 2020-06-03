@@ -15,7 +15,6 @@ namespace Acc\Core\PersistentData;
 
 use Acc\Core\MediaInterface;
 use Acc\Core\PersistentData\PDO\ExtendedPDOInterface;
-use Acc\Core\PrinterInterface;
 
 /**
  * Interface RequestInterface
@@ -30,4 +29,18 @@ interface RequestInterface extends MediaInterface
      * @return RequestInterface
      */
     public function executed(ExtendedPDOInterface $pdo): RequestInterface;
+
+    /**
+     * Returns a set of attributes
+     * @return RegistryInterface
+     */
+    public function attrs(): RegistryInterface;
+
+    /**
+     * Appends an attribute to a set
+     * @param string $name
+     * @param $val
+     * @return RequestInterface
+     */
+    public function withAttr(string $name, $val): RequestInterface;
 }
