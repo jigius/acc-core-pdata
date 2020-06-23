@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace Acc\Core\PersistentData\PDO;
 
-use PDOException;
+use PDOException, Exception;
 
 /**
  * Class MySqlPDO
@@ -47,6 +47,9 @@ final class MySqlPDO extends AbstractPDO
                     $this->rollbackTrx();
                     throw $ex;
                 }
+            } catch (Exception $ex) {
+                $this->rollbackTrx();
+                throw $ex;
             }
         } while ($retries-- > 0);
         return $ret;
