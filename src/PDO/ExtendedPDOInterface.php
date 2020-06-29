@@ -32,22 +32,6 @@ interface ExtendedPDOInterface
     public function withAttribute(int $attribute, $value): ExtendedPDOInterface;
 
     /**
-     * Initiates a transaction with respecting of it's level
-     */
-    public function beginTrx(): void;
-
-    /**
-     * Commits a transaction with respecting of it's level
-     */
-    public function commitTrx(): void;
-
-    /**
-     * Rolls back a transaction with respecting of it's level
-     * @param bool $forced if true - cancels a transaction immediate
-     */
-    public function rollbackTrx(bool $forced = false): void;
-
-    /**
      * Wraps up passed anonymous function by transaction
      * @param callable $callee
      * @param mixed ...$params

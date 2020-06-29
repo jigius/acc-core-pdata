@@ -75,40 +75,6 @@ abstract class AbstractPDO extends PDO implements ExtendedPDOInterface
     /**
      * @inheritDoc
      */
-    final public function beginTrx(): void
-    {
-        if ($this->trxLvl++ === 0) {
-            $this->beginTransaction();
-        }
-        $this->exec("SAVEPOINT SP{$this->trxLvl}");
-    }
-
-    /**
-     * @inheritDoc
-     */
-    final public function commitTrx(): void
-    {
-        if (--$this->trxLvl === 0) {
-            $this->commit();
-        }
-        $this->exec("RELEASE SAVEPOINT SP" . ($this->trxLvl + 1));
-    }
-
-    /**
-     * @inheritDoc
-     */
-    final public function rollbackTrx(bool $forced = false): void
-    {
-        if (!$forced && --$this->trxLvl > 0) {
-            $this->exec("ROLLBACK TO SP" . ($this->trxLvl + 1));
-        }
-        $this->trxLvl = 0;
-        $this->rollback();
-    }
-
-    /**
-     * @inheritDoc
-     */
     public function queried(string $query, PDOStatementInterface $stmt = null): PDOStatementInterface
     {
         return
