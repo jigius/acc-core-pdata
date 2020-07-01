@@ -50,9 +50,10 @@ final class MySqlPDO extends AbstractPDO
                     $ret = call_user_func_array($callee, $params);
                     break;
                 } catch (PDOException $ex) {
-                    if ($ex->getCode() == self::LOCK_WAIT_TIMEOUT_SQLSTATE && !($retries-- > 0)) {
-                        throw $ex;
+                    if ($ex->getCode() == self::LOCK_WAIT_TIMEOUT_SQLSTATE && $retries-- > 0) {
+                        continue;
                     }
+                    throw $ex;
                 }
             } while (true);
             if ($savepoint !== null) {
