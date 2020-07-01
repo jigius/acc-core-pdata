@@ -25,7 +25,7 @@ final class MySqlPDO extends AbstractPDO
     /*
      * Lock wait timeout exceeded; try restarting transaction
      */
-    const LOCK_WAIT_TIMEOUT_SQLSTATE = '1205';
+    const LOCK_WAIT_TIMEOUT_SQLSTATE = "1205";
 
     /**
      * Uses three tries to restarts transaction if PDOException with SQLSTATE='1205 occurs'
