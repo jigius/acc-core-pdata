@@ -13,15 +13,31 @@ declare(strict_types=1);
 
 namespace Acc\Core\PersistentData\PDO;
 
+use Acc\Core\PrinterInterface;
 use PDOException;
+use PDO;
 
 /**
  * Interface ExtendedPDOInterface
  * Expands the contract of original PDO object
  * @package Acc\Core\PersistentData\PDO
  */
-interface ExtendedPDOInterface
+interface ExtendedPDOInterface extends PrinterInterface
 {
+    /**
+     * Takes data is needed for creating a connection with a database
+     * @param string $key
+     * @param mixed $val
+     * @return ExtendedPDOInterface
+     */
+    public function with(string $key, $val): ExtendedPDOInterface;
+
+    /**
+     * Creates a connection with a database
+     * @return ExtendedPDOInterface
+     */
+    public function finished(): ExtendedPDOInterface;
+
     /**
      * Sets an attribute
      * Attention! The setting the attribute `ATTR_ERRMODE` is suppressed
@@ -34,10 +50,9 @@ interface ExtendedPDOInterface
     /**
      * Wraps up passed anonymous function by transaction
      * @param callable $callee
-     * @param mixed ...$params
      * @return mixed
      */
-    public function trx(callable $callee, ...$params);
+    public function trx(callable $callee);
 
     /**
      * Prepares a statement for execution and returns a statement object
@@ -63,4 +78,11 @@ interface ExtendedPDOInterface
      * @return string
      */
     public function lastInsertedId(string $name = null): string;
+
+    /**
+     * Returns an vanilla PDO object
+     * @inheritDoc
+     * @return PDO;
+     */
+    public function vanilla(): PDO;
 }

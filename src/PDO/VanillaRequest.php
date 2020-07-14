@@ -11,11 +11,8 @@
 
 declare(strict_types=1);
 
-namespace Acc\Core\PersistentData\PDO\Request;
+namespace Acc\Core\PersistentData\PDO;
 
-use Acc\Core\PersistentData\PDO\ExtendedPDOInterface;
-use Acc\Core\PersistentData\PDO\PDOStatementInterface;
-use Acc\Core\PersistentData\PDO\Value;
 use Acc\Core\PersistentData\RegistryInterface;
 use Acc\Core\PersistentData\VanillaRegistry;
 use Acc\Core\PrinterInterface;
@@ -24,7 +21,7 @@ use Acc\Core\PersistentData\RequestInterface;
 /**
  * Class VanillaRequest
  * The example of simple object that implemented contract `RequestInterface`
- * @package Acc\Core\PersistentData\PDO\Request
+ * @package Acc\Core\PersistentData\PDO
  */
 final class VanillaRequest implements RequestInterface
 {
@@ -42,7 +39,7 @@ final class VanillaRequest implements RequestInterface
      * Executed statement
      * @var PDOStatementInterface|null
      */
-    private ?PDOStatementInterface $statement;
+    private ?PDOStatementInterface $statement = null;
 
     /**
      * The attributes of the entity

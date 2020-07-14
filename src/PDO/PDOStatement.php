@@ -24,10 +24,16 @@ use LogicException, RuntimeException, PDO;
 final class PDOStatement implements PDOStatementInterface
 {
     /**
+     * @var ExtendedPDOInterface|null
+     */
+    private ?ExtendedPDOInterface $pdo = null;
+
+    private ?string $query = null;
+    /**
      * An injected original PDOStatement object
      * @var OrigPDOStatement|null
      */
-    private ?OrigPDOStatement $orig;
+    private ?OrigPDOStatement $orig = null;
 
     /**
      * Inputs data
@@ -39,7 +45,7 @@ final class PDOStatement implements PDOStatementInterface
      * An executed original PDOStatement object
      * @var OrigPDOStatement|null
      */
-    private ?OrigPDOStatement $r;
+    private ?OrigPDOStatement $r = null;
 
     /**
      * PDOStatement constructor.
@@ -51,8 +57,6 @@ final class PDOStatement implements PDOStatementInterface
             'attrs' => [],
             'values' => new Values()
         ];
-        $this->orig = null;
-        $this->r = null;
     }
 
     /**
@@ -81,9 +85,23 @@ final class PDOStatement implements PDOStatementInterface
         return $obj;
     }
 
+    public function withRequestedPdo(ExtendedPDOInterface $pdo): PDOStatementInterface
+    {
+        $obj = $this->blueprinted();
+        $obj->pdo = $pdo;
+        return $obj;
+    }
+
+    public function withQuery(string $query): PDOStatementInterface
+    {
+        $obj = $this->blueprinted();
+        $obj->query = $query;
+        return $obj;
+    }
+
     /**
      * @inheritDoc
-     * @throws RuntimeException
+     * @throws \Exception
      */
     public function executed(): PDOStatementInterface
     {
@@ -95,7 +113,17 @@ final class PDOStatement implements PDOStatementInterface
             $this->orig->setAttribute($attribute, $value);
         }
         $this->i['values']->bind($this->orig);
-        $this->orig->execute();
+        try {
+            $this->orig->execute();
+        } catch (\Exception $ex) {
+            dump($ex);
+            if ($this->pdo !== null && $this->query !== null) {
+                echo "resurrected!\n";
+                return $this->pdo->finished()->prepared($this->query, $this)->executed();
+            } else {
+                throw $ex;
+            }
+        }
         $obj = $this->blueprinted();
         $obj->r = $this->orig;
         return $obj;
@@ -115,11 +143,18 @@ final class PDOStatement implements PDOStatementInterface
         return $obj;
     }
 
+    public function withPdo(ExtendedPDOInterface $pdo): self
+    {
+        $obj = $this->blueprinted();
+        $obj->pdo = $pdo;
+        return $obj;
+    }
+
     /**
      * @inheritDoc
      * @throws LogicException
      */
-    public function withValues(ValuesInterface $values): PDOStatementInterface
+    public function withValues(ValuesInterface $values): self
     {
         if ($this->r !== null) {
             throw new LogicException("prohibited! Has being executed yet");
@@ -145,7 +180,7 @@ final class PDOStatement implements PDOStatementInterface
      * @param OrigPDOStatement $stmt
      * @return PDOStatementInterface
      */
-    public function withOrig(OrigPDOStatement $stmt): PDOStatementInterface
+    public function withVanilla(OrigPDOStatement $stmt): PDOStatementInterface
     {
         $obj = $this->blueprinted();
         $obj->orig = $stmt;
@@ -157,7 +192,7 @@ final class PDOStatement implements PDOStatementInterface
      * @return OrigPDOStatement
      * @throws LogicException;
      */
-    public function orig(): OrigPDOStatement
+    public function vanilla(): OrigPDOStatement
     {
         if ($this->orig === null) {
             throw new LogicException("original object has not being defined yet");
@@ -175,6 +210,9 @@ final class PDOStatement implements PDOStatementInterface
         $obj->orig = $this->orig;
         $obj->i = $this->i;
         $obj->r = $this->r;
+        $obj->query = $this->query;
+        $obj->pdo = $this->pdo;
         return $obj;
     }
 }
+

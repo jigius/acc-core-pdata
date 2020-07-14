@@ -66,11 +66,15 @@ interface PDOStatementInterface
      * @param PDOStatement $stmt
      * @return PDOStatementInterface
      */
-    public function withOrig(PDOStatement $stmt): PDOStatementInterface;
+    public function withVanilla(PDOStatement $stmt): PDOStatementInterface;
 
     /**
      * Returns injected original PDOStatement object
      * @return PDOStatement
      */
-    public function orig(): PDOStatement;
+    public function vanilla(): PDOStatement;
+
+    public function withQuery(string $query): PDOStatementInterface;
+
+    public function withRequestedPdo(ExtendedPDOInterface $pdo): PDOStatementInterface;
 }
