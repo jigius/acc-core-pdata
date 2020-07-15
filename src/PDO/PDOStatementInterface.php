@@ -13,8 +13,6 @@ declare(strict_types=1);
 
 namespace Acc\Core\PersistentData\PDO;
 
-use PDOStatement;
-
 /**
  * Interface PDOStatementInterface
  * @package Acc\Core\PersistentData\PDO
@@ -34,6 +32,14 @@ interface PDOStatementInterface
      * @return PDOStatementInterface
      */
     public function withAttributes(array $attrs): PDOStatementInterface;
+
+    /**
+     * Prepares a statement for executing
+     * @param ExtendedPDOInterface $pdo
+     * @param string $query
+     * @return PDOStatementInterface
+     */
+    public function prepared(ExtendedPDOInterface $pdo, string $query): PDOStatementInterface;
 
     /**
      * Executes a request and return new instance
@@ -60,21 +66,4 @@ interface PDOStatementInterface
      * @return int
      */
     public function rowCount(): int;
-
-    /**
-     * Inject new original PDOStatement object for executing
-     * @param PDOStatement $stmt
-     * @return PDOStatementInterface
-     */
-    public function withVanilla(PDOStatement $stmt): PDOStatementInterface;
-
-    /**
-     * Returns injected original PDOStatement object
-     * @return PDOStatement
-     */
-    public function vanilla(): PDOStatement;
-
-    public function withQuery(string $query): PDOStatementInterface;
-
-    public function withRequestedPdo(ExtendedPDOInterface $pdo): PDOStatementInterface;
 }

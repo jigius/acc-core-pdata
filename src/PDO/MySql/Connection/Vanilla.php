@@ -11,7 +11,7 @@
 
 declare(strict_types=1);
 
-namespace Acc\Core\PersistentData\PDO\MySql;
+namespace Acc\Core\PersistentData\PDO\MySql\Connection;
 
 use Acc\Core\PersistentData\PDO\{ExtendedPDOInterface, PDOStatement, PDOStatementInterface};
 use Exception, PDO, DomainException;
@@ -19,12 +19,18 @@ use Exception, PDO, DomainException;
 /**
  * Class Connection
  * An implementation of `ExtendedPDOInterface` contract for MySQL
- * @package Acc\Core\PersistentData\PDO\MySql
+ * @package Acc\Core\PersistentData\PDO\MySql\Connection
  */
-final class Connection implements ExtendedPDOInterface
+final class Vanilla implements ExtendedPDOInterface
 {
     /**
-     * A data is used for creates a connection with a database(dsn, username, password, options, initEvent)
+     * A default statement instance used for prepared requests
+     * @var PDOStatementInterface
+     */
+    private PDOStatementInterface $stmt;
+    /**
+     * A data is used for creates a connection with
+     * a database(the keys are: dsn, username, password, options, initEvent)
      * @var array
      */
     private array $i;
@@ -33,19 +39,21 @@ final class Connection implements ExtendedPDOInterface
      * A connection with a database
      * @var PDO|null
      */
-    private ?PDO $conn;
+    private ?PDO $orig;
 
     /**
      * Connection constructor.
+     * @param PDOStatementInterface|null $stmt
      */
-    final public function __construct()
+    final public function __construct(?PDOStatementInterface $stmt = null)
     {
         $this->i = [
             'username' => "",
             'password' => "",
             'initEvent' => []
         ];
-        $this->conn = null;
+        $this->stmt = $stmt ?? new PDOStatement();
+        $this->orig = null;
     }
 
     /**
@@ -76,7 +84,7 @@ final class Connection implements ExtendedPDOInterface
         $options = $this->i['options'] ?? [];
         $options[PDO::ATTR_ERRMODE] = PDO::ERRMODE_EXCEPTION;
         $this
-            ->conn =
+            ->orig =
                 new PDO(
                     $this->i['dsn'],
                     $this->i['username'],
@@ -99,7 +107,7 @@ final class Connection implements ExtendedPDOInterface
     {
         $this->validate();
         if ($attribute !== PDO::ATTR_ERRMODE) {
-            $this->conn->setAttribute($attribute, $value);
+            $this->vanilla()->setAttribute($attribute, $value);
         }
         return $this;
     }
@@ -109,12 +117,7 @@ final class Connection implements ExtendedPDOInterface
      */
     public function queried(string $query, PDOStatementInterface $stmt = null): PDOStatementInterface
     {
-        $this->validate();
-        return
-            ($stmt ?? new PDOStatement())
-                ->withVanilla(
-                    $this->conn->query($query)
-                );
+        return $this->prepared($query, $stmt)->executed();
     }
 
     /**
@@ -123,13 +126,7 @@ final class Connection implements ExtendedPDOInterface
     public function prepared(string $query, PDOStatementInterface $stmt = null): PDOStatementInterface
     {
         $this->validate();
-        return
-            ($stmt ?? new PDOStatement())
-                ->withVanilla(
-                    $this->conn->prepare($query)
-                )
-                ->withQuery($query)
-                ->withRequestedPdo($this);
+        return ($stmt ?? $this->stmt)->prepared($this, $query);
     }
 
     /**
@@ -138,7 +135,7 @@ final class Connection implements ExtendedPDOInterface
     public function lastInsertedId(string $name = null): string
     {
         $this->validate();
-        return $this->conn->lastInsertId($name);
+        return $this->vanilla()->lastInsertId($name);
     }
 
     /**
@@ -146,7 +143,7 @@ final class Connection implements ExtendedPDOInterface
      */
     public function vanilla(): PDO
     {
-        return $this->conn;
+        return $this->orig;
     }
 
     /**
@@ -187,15 +184,15 @@ final class Connection implements ExtendedPDOInterface
      */
     private function blueprinted(): self
     {
-        $obj = new self();
+        $obj = new self($this->stmt);
         $obj->i = $this->i;
-        $obj->conn = $this->conn;
+        $obj->orig = $this->orig;
         return $obj;
     }
 
     private function validate(): void
     {
-        if ($this->conn === null) {
+        if ($this->orig === null) {
             throw new DomainException("there is no created connection with a database");
         }
     }
