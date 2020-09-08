@@ -24,10 +24,12 @@
     "require-dev": {
         "symfony/var-dumper": "^5.2@dev"
     },
-    "repositories": [{
-        "type": "vcs",
-        "url": "git@github.com:jigius/acc-core.git"
-    }],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "git@github.com:jigius/acc-core.git"
+        }
+    ],
     "suggest": {
         "jigius/acc-core-pdata-examples": "trivial examples how to use this library"
     }

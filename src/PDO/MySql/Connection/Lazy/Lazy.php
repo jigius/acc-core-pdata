@@ -11,11 +11,12 @@
 
 declare(strict_types=1);
 
-namespace Acc\Core\PersistentData\PDO\MySql\Lazy;
+namespace Acc\Core\PersistentData\PDO\MySql\Connection\Lazy;
 
 use Acc\Core\PrinterInterface;
 use Acc\Core\PersistentData\PDO\{ExtendedPDOInterface, PDOStatementInterface};
-use Exception, DomainException, PDO;
+use Exception, DomainException, Throwable, PDOException;
+use PDO;
 
 /**
  * Class LazyConnection
@@ -31,7 +32,7 @@ final class Lazy implements ExtendedPDOInterface
 
     private PrinterInterface $rp;
 
-    private bool $trxIsIssued;
+    private int $nestedLevel;
 
     /**
      * Lazy constructor.
@@ -48,7 +49,7 @@ final class Lazy implements ExtendedPDOInterface
         $this->connected = false;
         $this->queue = $queue ?? new Queue();
         $this->rp = $requestPrinter ?? new RequestPrinter();
-        $this->trxIsIssued = false;
+        $this->nestedLevel = 0;
     }
 
     /**
@@ -136,7 +137,7 @@ final class Lazy implements ExtendedPDOInterface
 
     /**
      * @inheritDoc
-     * @throws Exception
+     * @throws Throwable
      */
     public function trx(callable $callee)
     {
@@ -144,18 +145,6 @@ final class Lazy implements ExtendedPDOInterface
             return $this->orig->trx($callee);
         }
         $uniqNum = bin2hex(random_bytes(6));
-        if (!$this->trxIsIssued) {
-            $cb =
-                function (ExtendedPDOInterface $pdo): void {
-                    $pdo->vanilla()->beginTransaction();
-                };
-        } else {
-            $cb =
-                function (ExtendedPDOInterface $pdo) use ($uniqNum): void
-                {
-                    $pdo->vanilla()->exec("SAVEPOINT SP{$uniqNum}");
-                };
-        }
         $this
             ->queue =
                 $this
@@ -163,50 +152,74 @@ final class Lazy implements ExtendedPDOInterface
                     ->withRequest(
                         $this
                             ->rp
-                            ->with('uniqNum', $uniqNum)
-                            ->with('cb', $cb)
+                            ->with('id', $uniqNum)
+                            ->with('cb',
+                                function (ExtendedPDOInterface $pdo) use ($uniqNum): void {
+                                    if ($this->nestedLevel++ > 0) {
+                                        echo "SAVEPOINT SP{$uniqNum}\n";
+                                        $pdo->queried("SAVEPOINT SP{$uniqNum}");
+                                    } else {
+                                        echo "beginTransaction()\n";
+                                        $pdo->vanilla()->beginTransaction();
+                                    }
+                                }
+                            )
                             ->finished()
                     );
-        $savepoint = null;
         try {
             $ret = call_user_func($callee);
-            if (!$this->trxIsIssued) {
-                $cb =
-                    function (ExtendedPDOInterface $pdo): void {
-                        $pdo->vanilla()->commit();
-                    };
-            } else {
-                $cb =
-                    function (ExtendedPDOInterface $pdo) use ($uniqNum): void
-                    {
-                        $pdo->vanilla()->exec("RELEASE SAVEPOINT SP{$uniqNum}");
-                    };
+        } catch (PDOException $ex) {
+            if (--$this->nestedLevel > 0) {
+                throw $ex;
             }
-            $this
-                ->queue =
+            $this->connected = false;
+            $this->queue = $queue ?? new Queue();
+            $this->queried("SET SESSION wait_timeout=10");
+            $this->nestedLevel = 0;
+            return $this->trx($callee);
+        } catch (Throwable $ex) {
+            $cb =
+                function (ExtendedPDOInterface $pdo) use ($uniqNum): void {
+                    if (--$this->nestedLevel > 0) {
+                        echo "ROLLBACK TO SP{$uniqNum}\n";
+                        $pdo->queried("ROLLBACK TO SP{$uniqNum}");
+                    } else {
+                        echo "rollback()\n";
+                        $pdo->vanilla()->rollBack();
+                    }
+                };
+            if ($this->connected) {
+                call_user_func($cb, $this);
+            } else {
+                $this
+                    ->queue =
                     $this
                         ->queue
                         ->withRequest(
                             $this
                                 ->rp
-                                ->with('uniqNum', $uniqNum)
+                                ->with('id', $uniqNum)
                                 ->with('cb', $cb)
                                 ->finished()
                         );
-            return $ret;
-        } catch (Exception $ex) {
-            if (!$this->trxIsIssued) {
-                $cb =
-                    function (ExtendedPDOInterface $pdo): void {
-                        $pdo->vanilla()->rollBack();
-                    };
-            } else {
-                $cb =
-                    function (ExtendedPDOInterface $pdo) use ($uniqNum): void
-                    {
-                        $pdo->vanilla()->exec("ROLLBACK TO SP{$uniqNum}");
-                    };
             }
+            throw $ex;
+
+        }
+        $cb =
+            function (ExtendedPDOInterface $pdo) use ($uniqNum): void {
+                if (--$this->nestedLevel > 0) {
+                    echo "RELEASE SAVEPOINT SP{$uniqNum}\n";
+                    $pdo->queried("RELEASE SAVEPOINT SP{$uniqNum}");
+                } else {
+                    echo "commit()\n";
+                    $pdo->vanilla()->commit();
+                }
+            };
+        echo "xxxx";
+        if ($this->connected) {
+            call_user_func($cb, $this);
+        } else {
             $this
                 ->queue =
                 $this
@@ -214,12 +227,12 @@ final class Lazy implements ExtendedPDOInterface
                     ->withRequest(
                         $this
                             ->rp
-                            ->with('uniqNum', $uniqNum)
+                            ->with('id', $uniqNum)
                             ->with('cb', $cb)
                             ->finished()
                     );
-            throw $ex;
         }
+        return $ret;
     }
 
     /**
@@ -230,7 +243,7 @@ final class Lazy implements ExtendedPDOInterface
     {
         $obj = new self($this->orig, $this->queue);
         $obj->connected = $this->connected;
-        $obj->trxIsIssued = $this->trxIsIssued;
+        $obj->nestedLevel = $this->nestedLevel;
         return $obj;
     }
 

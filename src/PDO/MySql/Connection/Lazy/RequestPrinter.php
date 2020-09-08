@@ -11,7 +11,7 @@
 
 declare(strict_types=1);
 
-namespace Acc\Core\PersistentData\PDO\MySql\Lazy;
+namespace Acc\Core\PersistentData\PDO\MySql\Connection\Lazy;
 
 use Acc\Core\PrinterInterface;
 use DomainException;
@@ -34,13 +34,13 @@ final class RequestPrinter implements RequestPrinterInterface
 
     public function finished(): RequestInterface
     {
-        if (empty($this->i['hash']) || !is_string($this->i['hash'])) {
-            throw new DomainException("input data with name=`hash` is invalid");
+        if (empty($this->i['id']) || !is_string($this->i['id'])) {
+            throw new DomainException("input data with name=`id` is invalid");
         }
-        if (empty($this->i['cb']) || !is_callable($this->i['hash'])) {
+        if (empty($this->i['cb']) || !is_callable($this->i['cb'])) {
             throw new DomainException("input data with name=`cb` is invalid");
         }
-        return new Request(md5($this->i['hash']), $this->i['cb']);
+        return new Request(md5($this->i['id']), $this->i['cb']);
     }
 
     private function blueprinted(): self

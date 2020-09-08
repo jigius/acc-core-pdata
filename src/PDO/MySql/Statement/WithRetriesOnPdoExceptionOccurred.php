@@ -23,12 +23,11 @@ use Acc\Core\PersistentData\PDO\{
 use PDOException;
 
 /**
- * Class WithRetriesOnLockWaitTimeout
- * SQLSTATE[HY000]: General error: 1205 Lock wait timeout exceeded; try restarting transaction.
- * Tries to restart a request of an original instance if PDOException with SQLSTATE='1205' has been occurred
+ * Class WithRetriesOnPdoExceptionOccurred
+ * Tries to restart a request of an original instance if PDOException with specified code has been occurred
  * @package Acc\Core\PersistentData\PDO\MySql\Statement
  */
-final class WithRetriesOnLockWaitTimeout implements PDOStatementInterface
+final class WithRetriesOnPdoExceptionOccurred implements PDOStatementInterface
 {
     /**
      * An original connection
@@ -43,28 +42,28 @@ final class WithRetriesOnLockWaitTimeout implements PDOStatementInterface
     private int $retries;
 
     /**
-     * A period into milliseconds for sleep between retries in time of creating of a connection
-     * @var int
-     */
-    private int $sleep;
-
-    /**
      * An input data
      * @var array
      */
     private array $i;
 
     /**
-     * WithRetriesOnLockWaitTimeout constructor.
-     * @param PDOStatementInterface $stmt
-     * @param int|5 $retries The number of retries
-     * @param int|250000 $sleep A period into milliseconds for sleep between retries in time of creating of a connection
+     * The code of a PDOException that has been looked for
+     * @var int
      */
-    public function __construct(PDOStatementInterface $stmt, ?int $retries = 3, ?int $sleep = 250000)
+    private int $code;
+
+    /**
+     * WithRetriesOnPdoException constructor.
+     * @param PDOStatementInterface $stmt
+     * @param int $code The code of a PDOException that has been looked for
+     * @param int|3 $retries The number of retries
+     */
+    public function __construct(PDOStatementInterface $stmt, int $code, int $retries = 3)
     {
         $this->orig = $stmt;
         $this->retries = $retries;
-        $this->sleep = $sleep;
+        $this->code = $code;
         $this->i = [];
     }
 
@@ -85,25 +84,24 @@ final class WithRetriesOnLockWaitTimeout implements PDOStatementInterface
      */
     public function executed(): PDOStatementInterface
     {
-        $retries = $this->retries;
-        $ret = null;
-        while (true) {
-            try {
-                $ret = $this->orig->executed();
-                break;
-            } catch (PDOException $ex) {
-                if ($ex->errorInfo[1] === 1205 && $retries-- > 0) {
-                    echo "restart...";
-                    if ($this->sleep > 0) {
-                        usleep($this->sleep);
-                    }
-                    $this->orig = $this->orig->prepared($this->i['pdo']->finished(), $this->i['query']);
-                    continue;
-                }
-                throw $ex;
+        try {
+            return $this->orig->executed();
+        } catch (PDOException $ex) {
+            if ($ex->errorInfo[1] === $this->code && $this->retries > 0) {
+                $obj = $this->blueprinted();
+                $obj->retries = $this->retries - 1;
+                echo "retry - {$obj->retries}! ";
+                $obj->orig =
+                    $this
+                        ->orig
+                        ->prepared(
+                            $this->i['pdo'],
+                            $this->i['query']
+                        );
+                return $obj->executed();
             }
+            throw $ex;
         }
-        return $ret;
     }
 
     /**
@@ -160,9 +158,8 @@ final class WithRetriesOnLockWaitTimeout implements PDOStatementInterface
      */
     private function blueprinted(): self
     {
-        $obj = new self($this->orig, $this->retries, $this->sleep);
+        $obj = new self($this->orig, $this->code, $this->retries);
         $obj->i = $this->i;
         return $obj;
     }
 }
-

@@ -11,7 +11,7 @@
 
 declare(strict_types=1);
 
-namespace Acc\Core\PersistentData\PDO\MySql\Lazy;
+namespace Acc\Core\PersistentData\PDO\MySql\Connection\Lazy;
 
 use Acc\Core\PrinterInterface;
 

@@ -20,7 +20,7 @@ use Acc\Core\PersistentData\PDO\{
     ValueInterface,
     ValuesInterface
 };
-use PDOException;
+use PDOException, LogicException;
 
 /**
  * Class WithResurrectingConnection
@@ -60,7 +60,7 @@ final class WithResurrectingConnection implements PDOStatementInterface
      * @param int|5 $retries The number of retries
      * @param int|0 $sleep A period into seconds for sleep between retries in time of creating of a connection
      */
-    public function __construct(PDOStatementInterface $stmt, ?int $retries = 5, ?int $sleep = 0)
+    public function __construct(PDOStatementInterface $stmt, int $retries = 5, int $sleep = 0)
     {
         $this->orig = $stmt;
         $this->retries = $retries;
@@ -82,24 +82,19 @@ final class WithResurrectingConnection implements PDOStatementInterface
 
     public function executed(): PDOStatementInterface
     {
-        $retries = $this->retries;
-        $ret = null;
-        while (true) {
-            try {
-                $ret = $this->orig->executed();
-                break;
-            } catch (PDOException $ex) {
-                if ($ex->errorInfo[1] === 2006 && $retries-- > 0) {
-                    if ($this->sleep > 0) {
-                        sleep($this->sleep);
-                    }
-                    $this->orig = $this->orig->prepared($this->i['pdo']->finished(), $this->i['query']);
-                    continue;
+        throw new LogicException("Broken implementation!!!"); /* FIXME: WithResurrectingConnection::class is broken */
+        try {
+            return $this->orig->executed();
+        } catch (PDOException $ex) {
+            if ($ex->errorInfo[1] === 2006 && $this->retries-- > 0 && !$this->i['pdo']->vanilla()->inTransaction()) {
+                if ($this->sleep > 0) {
+                    sleep($this->sleep);
                 }
-                throw $ex;
+                $this->orig = $this->orig->prepared($this->i['pdo']->finished(), $this->i['query']);
+                return $this->executed();
             }
+            throw $ex;
         }
-        return $ret;
     }
 
     public function withFetchMode(FetchModeInterface $mode): PDOStatementInterface

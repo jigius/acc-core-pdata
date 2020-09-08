@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace Acc\Core\PersistentData\PDO\MySql\Connection;
 
 use Acc\Core\PersistentData\PDO\{ExtendedPDOInterface, PDOStatement, PDOStatementInterface};
-use Exception, PDO, DomainException;
+use Exception, PDO, PDOException, DomainException;
 
 /**
  * Class Connection
@@ -161,7 +161,7 @@ final class Vanilla implements ExtendedPDOInterface
             } else {
                 $this->vanilla()->beginTransaction();
             }
-            $ret = call_user_func($callee);
+            $ret = call_user_func($callee, $this);
             if ($savepoint !== null) {
                 $this->vanilla()->exec("RELEASE SAVEPOINT SP{$savepoint}");
             } else {
@@ -169,6 +169,7 @@ final class Vanilla implements ExtendedPDOInterface
             }
             return $ret;
         } catch (Exception $ex) {
+            dump($ex);
             if ($savepoint !== null) {
                 $this->vanilla()->exec("ROLLBACK TO SP{$savepoint}");
             } else {
