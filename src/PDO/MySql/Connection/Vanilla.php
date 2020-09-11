@@ -13,8 +13,13 @@ declare(strict_types=1);
 
 namespace Acc\Core\PersistentData\PDO\MySql\Connection;
 
-use Acc\Core\PersistentData\PDO\{ExtendedPDOInterface, PDOStatement, PDOStatementInterface};
-use Exception, PDO, PDOException, DomainException;
+use Acc\Core\PersistentData\PDO\{
+    ExtendedPDOInterface,
+    PDOStatement,
+    PDOStatementInterface
+};
+use PDO;
+use Exception, LogicException, DomainException;
 
 /**
  * Class Connection
@@ -132,17 +137,11 @@ final class Vanilla implements ExtendedPDOInterface
     /**
      * @inheritDoc
      */
-    public function lastInsertedId(string $name = null): string
-    {
-        $this->validate();
-        return $this->vanilla()->lastInsertId($name);
-    }
-
-    /**
-     * @inheritDoc
-     */
     public function vanilla(): PDO
     {
+        if ($this->orig === null) {
+            throw new LogicException("has not been initialized yet");
+        }
         return $this->orig;
     }
 
@@ -169,7 +168,6 @@ final class Vanilla implements ExtendedPDOInterface
             }
             return $ret;
         } catch (Exception $ex) {
-            dump($ex);
             if ($savepoint !== null) {
                 $this->vanilla()->exec("ROLLBACK TO SP{$savepoint}");
             } else {

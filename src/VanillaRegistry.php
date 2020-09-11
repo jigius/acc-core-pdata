@@ -57,7 +57,7 @@ final class VanillaRegistry implements RegistryInterface
 
     /**
      * @inheritDoc
-     * @return MediaInterface
+     * @return RegistryInterface
      */
     public function finished(): RegistryInterface
     {
@@ -86,16 +86,22 @@ final class VanillaRegistry implements RegistryInterface
 
     /**
      * @inheritDoc
-     * @param string $key
-     * @param null $default
      * @return mixed|null
      */
-    public function value(string $key, $default = null)
+    public function value(string $key, callable $success = null, callable $failed = null)
     {
         if (!array_key_exists($key, $this->i)) {
-            return $default;
+            $ret = null;
+            if ($failed !== null) {
+                $ret = call_user_func($failed, $key, $this);
+            }
+        } else {
+            $ret = $this->i[$key];
+            if ($success !== null) {
+                $ret = call_user_func($success, $ret, $this);
+            }
         }
-        return $this->i[$key];
+        return $ret;
     }
 
     /**

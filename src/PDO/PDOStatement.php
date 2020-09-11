@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace Acc\Core\PersistentData\PDO;
 
 use Acc\Core\PersistentData\PDO\FetchMode\Vanilla;
-use LogicException, PDO;
+use LogicException, PDO, PDOStatement as StockPDOStatement;
 
 /**
  * Class PDOStatement
@@ -133,13 +133,17 @@ final class PDOStatement implements PDOStatementInterface
     /**
      * @inheritDoc
      * @throws LogicException
+     * @return StockPDOStatement
      */
-    public function rowCount(): int
+    public function vanilla(): StockPDOStatement
     {
-        if ($this->i['executed'] ?? false) {
-            throw new LogicException("prohibited! Hasn't being executed yet");
+        if (!($this->i['stmt'] ?? false)) {
+            throw new LogicException("has not prepared yet");
         }
-        return $this->i['stmt']->rowCount();
+        if (($this->i['stmt'] instanceof PDOStatement)) {
+            throw new LogicException("invalid type");
+        }
+        return $this->i['stmt'];
     }
 
     /**

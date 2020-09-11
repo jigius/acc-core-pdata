@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Acc\Core\PersistentData\PDO;
 
 use PDOStatement, DomainException, PDO;
+use LogicException;
 
 /**
  * Class Value
@@ -46,6 +47,9 @@ final class Value implements ValueInterface
      */
     public function withName($name): ValueInterface
     {
+        if (substr($name, 0, 1) !== ":") {
+            throw new LogicException("the name=`{$name}` has to be starting with `:` symbol");
+        }
         $obj = $this->blueprinted();
         $obj->i['name'] = $name;
         return $obj;

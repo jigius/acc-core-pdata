@@ -20,6 +20,7 @@ use Acc\Core\PersistentData\PDO\{
     ValueInterface,
     ValuesInterface
 };
+use PDOStatement;
 use PDOException;
 
 /**
@@ -117,9 +118,9 @@ final class WithRetriesOnPdoExceptionOccurred implements PDOStatementInterface
     /**
      * @inheritDoc
      */
-    public function rowCount(): int
+    public function vanilla(): PDOStatement
     {
-        return $this->orig->rowCount();
+        return $this->orig->vanilla();
     }
 
     /**

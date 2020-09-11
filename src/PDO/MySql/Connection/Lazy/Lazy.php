@@ -15,7 +15,7 @@ namespace Acc\Core\PersistentData\PDO\MySql\Connection\Lazy;
 
 use Acc\Core\PrinterInterface;
 use Acc\Core\PersistentData\PDO\{ExtendedPDOInterface, PDOStatementInterface};
-use Exception, DomainException, Throwable, PDOException;
+use DomainException, Throwable, PDOException;
 use PDO;
 
 /**
@@ -126,17 +126,6 @@ final class Lazy implements ExtendedPDOInterface
 
     /**
      * @inheritDoc
-     */
-    public function lastInsertedId(string $name = null): string
-    {
-        if (!$this->connected) {
-            return $this->connected()->lastInsertedId($name);
-        }
-        return $this->orig->lastInsertedId($name);
-    }
-
-    /**
-     * @inheritDoc
      * @throws Throwable
      */
     public function trx(callable $callee)
@@ -216,7 +205,6 @@ final class Lazy implements ExtendedPDOInterface
                     $pdo->vanilla()->commit();
                 }
             };
-        echo "xxxx";
         if ($this->connected) {
             call_user_func($cb, $this);
         } else {

@@ -20,6 +20,7 @@ use Acc\Core\PersistentData\PDO\{
     ValueInterface,
     ValuesInterface
 };
+use PDOStatement;
 use PDOException, LogicException;
 
 /**
@@ -104,9 +105,9 @@ final class WithResurrectingConnection implements PDOStatementInterface
         return $obj;
     }
 
-    public function rowCount(): int
+    public function vanilla(): PDOStatement
     {
-        return $this->orig->rowCount();
+        return $this->orig->vanilla();
     }
 
     public function withAttributes(array $attrs): PDOStatementInterface

@@ -38,10 +38,11 @@ interface RegistryInterface extends MediaInterface, PrinterInterface
     public function finished(): RegistryInterface;
 
     /**
-     * Return the value for a requested attribute or returns default value
+     * Returns the value for a requested attribute processed with processors (if they are defined)
      * @param string $key the name of a requesting attribute
-     * @param mixed|null $default the default value for a requested attribute if it's unknown
+     * @param callable|null $success optional processor for known attribute
+     * @param callable|null $failed optional processor for unknown attribute
      * @return mixed
      */
-    public function value(string $key, $default = null);
+    public function value(string $key, callable $success = null, callable $failed = null);
 }

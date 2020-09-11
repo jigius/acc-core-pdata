@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace Acc\Core\PersistentData\PDO;
 
+use PDOStatement;
+
 /**
  * Interface PDOStatementInterface
  * @package Acc\Core\PersistentData\PDO
@@ -62,8 +64,8 @@ interface PDOStatementInterface
     public function withValues(ValuesInterface $values): PDOStatementInterface;
 
     /**
-     * Returns the count of rows have been affected
-     * @return int
+     * Returns an vanilla PDOStatement object
+     * @return PDOStatement
      */
-    public function rowCount(): int;
+    public function vanilla(): PDOStatement;
 }
