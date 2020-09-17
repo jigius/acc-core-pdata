@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Acc\Core\PersistentData\PDO\Sql;
 
 use Acc\Core\PersistentData\PDO;
-use Acc\Core\Inventory\Asset;
+use Acc\Core\Registry\Asset;
 use DomainException;
 
 final class Values implements ValuesInterface

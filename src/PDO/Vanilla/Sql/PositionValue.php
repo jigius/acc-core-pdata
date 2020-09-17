@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Acc\Core\PersistentData\PDO\Sql;
 
-use Acc\Core\Inventory\PositionsInterface;
+use Acc\Core\Registry\BeansInterface;
 use Acc\Core\PersistentData\PDO;
 use LogicException;
 
@@ -20,16 +20,16 @@ final class PositionValue implements ValueInterface
     private $s;
 
     /**
-     * @var PositionsInterface
+     * @var BeansInterface
      */
-    private PositionsInterface $p;
+    private BeansInterface $p;
 
     /**
      * @var string
      */
     private string $n;
 
-    public function __construct(PositionsInterface $p, string $name, callable $success, callable $failed = null)
+    public function __construct(BeansInterface $p, string $name, callable $success, callable $failed = null)
     {
         $this->p = $p;
         $this->n = $name;

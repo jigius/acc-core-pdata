@@ -18,7 +18,7 @@ use Acc\Core\PrinterInterface;
 use Iterator, IteratorIterator, EmptyIterator;
 use LogicException, RuntimeException;
 
-final class VanillaRepository implements RepositoryInterface, PrinterInterface
+final class Repository implements RepositoryInterface, PrinterInterface
 {
     /**
      * @var ExtendedPDOInterface

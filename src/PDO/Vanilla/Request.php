@@ -19,11 +19,11 @@ use Acc\Core\PrinterInterface;
 use Acc\Core\PersistentData\RequestInterface;
 
 /**
- * Class VanillaRequest
+ * Class Request
  * The example of simple object that implemented contract `RequestInterface`
  * @package Acc\Core\PersistentData\PDO
  */
-final class VanillaRequest implements RequestInterface
+final class Request implements RequestInterface
 {
     /**
      * @var string The query string
@@ -48,7 +48,7 @@ final class VanillaRequest implements RequestInterface
     private RegistryInterface $attrs;
 
     /**
-     * VanillaRequest constructor.
+     * Request constructor.
      * @param string $query
      * @param array $value
      * @param RegistryInterface|null $attrs

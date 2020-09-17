@@ -25,7 +25,7 @@ interface RepositoryInterface extends MediaInterface
 {
     /**
      * Pulls items those satisfied an executed request
-     * @return EntitiesInterface
+     * @return BeansInterface
      */
     public function pulled(): Iterator;
 
