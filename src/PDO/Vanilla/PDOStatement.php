@@ -13,8 +13,15 @@ declare(strict_types=1);
 
 namespace Acc\Core\PersistentData\PDO\Vanilla;
 
-use Acc\Core\PersistentData\PDO{};
-use Acc\Core\PersistentData\PDO\FetchMode\Vanilla;
+use Acc\Core\PrinterInterface;
+use Acc\Core\ResultInterface;
+use Acc\Core\PersistentData\PDO\{ExtendedPDOInterface,
+    FetchMode\Vanilla,
+    FetchModeInterface,
+    PDOStatementInterface,
+    ValueInterface,
+    Values,
+    ValuesInterface};
 use LogicException, PDO, PDOStatement as StockPDOStatement;
 
 /**
@@ -84,23 +91,22 @@ final class PDOStatement implements PDOStatementInterface
      * @inheritDoc
      * @throws LogicException
      */
-    public function executed(): PDOStatementInterface
+    public function executed(PrinterInterface $p): PrinterInterface
     {
-        if (!isset($this->i['executed'])) {
-            throw new LogicException("prohibited! Has being prepared yet");
-        }
-        if ($this->i['executed']) {
-            throw new LogicException("prohibited! Has being executed yet");
-        }
-        $obj = $this->blueprinted();
-        $obj->i['fetchMode']->initialize($obj->i['stmt']);
-        foreach ($obj->i['attrs'] as $attribute => $value) {
-            $obj->i['stmt']->setAttribute($attribute, $value);
-        }
-        $obj->i['values']->bind($obj->i['stmt']);
-        $obj->i['stmt']->execute();
-        $obj->i['executed'] = true;
-        return $obj;
+        $this->i['fetchMode']->initialize($this->i['stmt']);
+        array_walk (
+            $this->i['attrs'],
+            function ($val, string $attr): void {
+                $this->i['stmt']->setAttribute($attr, $val);
+            }
+        );
+        $this->i['values']->bind($this->i['stmt']);
+        $this->i['stmt']->execute();
+        return
+            $p
+                ->with('values', $this->i['values'])
+                ->with('stmt', $this)
+                ->with('pdo', $this->i['pdo']);
     }
 
     /**
@@ -138,11 +144,8 @@ final class PDOStatement implements PDOStatementInterface
      */
     public function vanilla(): StockPDOStatement
     {
-        if (!($this->i['stmt'] ?? false)) {
+        if (!isset($this->i['stmt'])) {
             throw new LogicException("has not prepared yet");
-        }
-        if (($this->i['stmt'] instanceof PDOStatement)) {
-            throw new LogicException("invalid type");
         }
         return $this->i['stmt'];
     }

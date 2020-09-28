@@ -11,8 +11,9 @@
 
 declare(strict_types=1);
 
-namespace Acc\Core\PersistentData\PDO;
+namespace Acc\Core\PersistentData\PDO\Vanilla;
 
+use Acc\Core\PersistentData\PDO\ValueInterface;
 use PDOStatement, DomainException, PDO;
 use LogicException;
 

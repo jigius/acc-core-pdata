@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Acc\Core\PersistentData\PDO\Sql;
+namespace Acc\Core\PersistentData\PDO\Vanilla\Sql;
 
 use Acc\Core\Registry\BeansInterface;
 
@@ -38,7 +38,7 @@ final class PositionChunk implements ChunkInterface
     public function processed(): string
     {
         if ($this->p->defined($this->n)) {
-            $r = $this->s? call_user_func($this->s, $this->p->fetch($this->n)): $this->s;
+            $r = $this->s? call_user_func($this->s, $this->p->pulled($this->n)): $this->s;
         } else {
             $r = $this->f? call_user_func($this->f, $this->n): "";
         }

@@ -15,7 +15,7 @@ namespace Acc\Core\PersistentData\Vanilla;
 
 use Acc\Core\PersistentData\BeanInterface;
 use Acc\Core\PrinterInterface;
-use Acc\Core\Registry;
+use Acc\Core\Value;
 use LogicException;
 
 /**
@@ -26,16 +26,16 @@ use LogicException;
 final class Bean implements BeanInterface
 {
     /**
-     * @var Registry\BeansInterface|null
+     * @var Value\BeansInterface|null
      */
-    protected ?Registry\BeansInterface $p;
+    protected ?Value\BeansInterface $p;
 
     /**
-     * @var Registry\BeansInterface|null
+     * @var Value\BeansInterface|null
      */
-    protected ?Registry\BeansInterface $a;
+    protected ?Value\BeansInterface $a;
 
-    public function __construct(?Registry\BeansInterface $property = null, ?Registry\BeansInterface $attribute = null)
+    public function __construct(?Value\BeansInterface $property = null, ?Value\BeansInterface $attribute = null)
     {
         $this->p = $property;
         $this->a = $attribute;
@@ -47,11 +47,11 @@ final class Bean implements BeanInterface
     public function withProp(string $name, $val): self
     {
         $obj = $this->blueprinted();
-        $pod = $this->p ?? new Registry\Vanilla\Pod();
+        $pod = $this->p ?? new Value\Vanilla\Pod();
         if ($pod->defined($name)) {
             $pea = $pod->pulled($name);
         } else {
-            $pea = new Registry\Vanilla\Pea();
+            $pea = new Value\Vanilla\Pea();
         }
         $obj->p =
             $pod
@@ -69,28 +69,28 @@ final class Bean implements BeanInterface
     {
         $obj = $this->blueprinted();
         $obj->p =
-            ($this->a ?? new Registry\Vanilla\Pod())
+            ($this->a ?? new Value\Vanilla\Pod())
                 ->pushed($name, $val);
         return $obj;
     }
 
-    public function attrs(): Registry\BeansInterface
+    public function attrs(): Value\BeansInterface
     {
-       return $this->a ?? new Registry\Vanilla\Pod();
+       return $this->a ?? new Value\Vanilla\Pod();
     }
 
     public function printed(PrinterInterface $printer)
     {
         if ($this->p !== null) {
             foreach ($this->p->iterator() as $key => $pea) {
-                if (!($pea instanceof Registry\BeanInterface)) {
+                if (!($pea instanceof Value\BeanInterface)) {
                     throw new LogicException("pea with key=`{$key}` has invalid type");
                 }
                 $val = $pea->value();
                 if (!$val->defined()) {
                     continue;
                 }
-                if (!($val instanceof Registry\Vanilla\DefinedValue)) {
+                if (!($val instanceof Value\Vanilla\WithConstraint)) {
                     throw new LogicException("a value for pea with key=`{$key}` has invalid type");
                 }
                 $printer = $printer->with($key, $val->fetch());

@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Acc\Core\PersistentData\PDO;
 
+use Acc\Core\PrinterInterface;
 use PDOStatement;
 
 /**
@@ -44,10 +45,11 @@ interface PDOStatementInterface
     public function prepared(ExtendedPDOInterface $pdo, string $query): PDOStatementInterface;
 
     /**
-     * Executes a request and return new instance
-     * @return PDOStatementInterface
+     * Executes a request
+     * @param PrinterInterface $p An object for printing the result of a request to it
+     * @return PrinterInterface
      */
-    public function executed(): PDOStatementInterface;
+    public function executed(PrinterInterface $p): PrinterInterface;
 
     /**
      * Appends a value to current set

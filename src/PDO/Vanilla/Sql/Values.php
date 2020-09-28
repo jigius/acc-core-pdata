@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Acc\Core\PersistentData\PDO\Sql;
+namespace Acc\Core\PersistentData\PDO\Vanilla\Sql;
 
 use Acc\Core\PersistentData\PDO;
-use Acc\Core\Registry\Asset;
+use Acc\Core\Value\Vanilla\FailedException;
 use DomainException;
 
 final class Values implements ValuesInterface
@@ -21,7 +21,7 @@ final class Values implements ValuesInterface
 
     public function __construct(?PDO\ValuesInterface $v = null)
     {
-        $this->v = $v ?? new PDO\Values();
+        $this->v = $v ?? new PDO\Vanilla\Values();
         $this->q = [];
     }
 
@@ -42,7 +42,7 @@ final class Values implements ValuesInterface
                     $vs = $v->processed($vs);
                 }
             );
-        } catch (Asset\FailureException $ex) {
+        } catch (FailedException $ex) {
             throw new DomainException("invalid value", 0, $ex);
         }
         return $vs;
@@ -50,7 +50,7 @@ final class Values implements ValuesInterface
 
     private function blueprinted(): self
     {
-        $obj = new self();
+        $obj = new self($this->v);
         $obj->q = $this->q;
         return $obj;
     }

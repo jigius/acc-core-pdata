@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace Acc\Core\PersistentData;
 
-use Acc\Core\Registry;
+use Acc\Core\Value;
 use Acc\Core\MediaInterface;
 
 /**
@@ -41,7 +41,7 @@ interface BeanInterface extends MediaInterface
 
     /**
      * Returns attributes have assigned to the instance
-     * @return Registry\BeansInterface
+     * @return Value\BeansInterface
      */
-    public function attrs(): Registry\BeansInterface;
+    public function attrs(): Value\BeansInterface;
 }

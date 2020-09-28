@@ -11,11 +11,11 @@
 
 declare(strict_types=1);
 
-namespace Acc\Core\PersistentData\PDO\MySql\Connection;
+namespace Acc\Core\PersistentData\PDO\Vanilla\MySql\Connection;
 
 use Acc\Core\PersistentData\PDO\{
     ExtendedPDOInterface,
-    PDOStatement,
+    Vanilla\PDOStatement,
     PDOStatementInterface
 };
 use PDO;
@@ -30,9 +30,9 @@ final class Vanilla implements ExtendedPDOInterface
 {
     /**
      * A default statement instance used for prepared requests
-     * @var PDOStatementInterface
+     * @var PDOStatementInterface|null
      */
-    private PDOStatementInterface $stmt;
+    private ?PDOStatementInterface $stmt;
     /**
      * A data is used for creates a connection with
      * a database(the keys are: dsn, username, password, options, initEvent)
@@ -44,7 +44,7 @@ final class Vanilla implements ExtendedPDOInterface
      * A connection with a database
      * @var PDO|null
      */
-    private ?PDO $orig;
+    private ?PDO $original = null;
 
     /**
      * Connection constructor.
@@ -55,10 +55,16 @@ final class Vanilla implements ExtendedPDOInterface
         $this->i = [
             'username' => "",
             'password' => "",
-            'initEvent' => []
+            'options' => []
         ];
-        $this->stmt = $stmt ?? new PDOStatement();
-        $this->orig = null;
+        $this->stmt = $stmt;
+    }
+
+    public function withStatement(PDOStatementInterface $stmt): self
+    {
+        $obj = $this->blueprinted();
+        $obj->stmt = $stmt;
+        return $obj;
     }
 
     /**
@@ -67,11 +73,7 @@ final class Vanilla implements ExtendedPDOInterface
     public function with(string $key, $val): self
     {
         $obj = $this->blueprinted();
-        if (isset($this->i[$key]) && is_array($this->i[$key]) && $key === 'initEvent') {
-            $obj->i[$key][] = $val;
-        } else {
-            $obj->i[$key] = $val;
-        }
+        $obj->i[$key] = $val;
         return $obj;
     }
 
@@ -83,25 +85,28 @@ final class Vanilla implements ExtendedPDOInterface
         if (!isset($this->i['dsn']) || !is_string($this->i['dsn'])) {
             throw new DomainException("`dsn` is invalid. It must to be a not empty string");
         }
-        if (isset($this->i['options']) && !is_array($this->i['options'])) {
+        if (!is_array($this->i['options'])) {
             throw new DomainException("`options` is invalid. It must to be an array");
         }
-        $options = $this->i['options'] ?? [];
-        $options[PDO::ATTR_ERRMODE] = PDO::ERRMODE_EXCEPTION;
         $this
-            ->orig =
+            ->original =
                 new PDO(
                     $this->i['dsn'],
                     $this->i['username'],
                     $this->i['password'],
-                    $options
+                    array_merge(
+                        $this->i['options'],
+                        [
+                            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+                        ]
+                    )
                 );
-        array_walk(
-            $this->i['initEvent'],
-            function (callable $hdlr) {
-                call_user_func($hdlr, $this);
+        if (isset($this->i['initEvent'])) {
+            if (!is_callable($this->i['initEvent'])) {
+                throw new DomainException("`initEvent` is invalid. It must be a callee");
             }
-        );
+            call_user_func($this->i['initEvent'], $this);
+        }
         return $this;
     }
 
@@ -110,28 +115,27 @@ final class Vanilla implements ExtendedPDOInterface
      */
     final public function withAttribute(int $attribute, $value): ExtendedPDOInterface
     {
-        $this->validate();
-        if ($attribute !== PDO::ATTR_ERRMODE) {
-            $this->vanilla()->setAttribute($attribute, $value);
+        if ($attribute === PDO::ATTR_ERRMODE) {
+            throw new LogicException("PDO::ATTR_ERRMODE is prohibited from changing");
         }
+        $this->vanilla()->setAttribute($attribute, $value);
         return $this;
     }
 
     /**
      * @inheritDoc
      */
-    public function queried(string $query, PDOStatementInterface $stmt = null): PDOStatementInterface
+    public function queried(string $query): PDOStatementInterface
     {
-        return $this->prepared($query, $stmt)->executed();
+        return $this->prepared($query)->executed();
     }
 
     /**
      * @inheritDoc
      */
-    public function prepared(string $query, PDOStatementInterface $stmt = null): PDOStatementInterface
+    public function prepared(string $query): PDOStatementInterface
     {
-        $this->validate();
-        return ($stmt ?? $this->stmt)->prepared($this, $query);
+        return $this->statement()->prepared($this, $query);
     }
 
     /**
@@ -139,10 +143,10 @@ final class Vanilla implements ExtendedPDOInterface
      */
     public function vanilla(): PDO
     {
-        if ($this->orig === null) {
+        if ($this->original === null) {
             throw new LogicException("has not been initialized yet");
         }
-        return $this->orig;
+        return $this->original;
     }
 
     /**
@@ -151,7 +155,6 @@ final class Vanilla implements ExtendedPDOInterface
      */
     public function trx(callable $callee)
     {
-        $this->validate();
         $savepoint = null;
         try {
             if ($this->vanilla()->inTransaction()) {
@@ -179,20 +182,21 @@ final class Vanilla implements ExtendedPDOInterface
 
     /**
      * Clones an instance
-     * @return $this
+     * @return self
      */
     private function blueprinted(): self
     {
         $obj = new self($this->stmt);
         $obj->i = $this->i;
-        $obj->orig = $this->orig;
+        $obj->original = $this->original;
         return $obj;
     }
 
-    private function validate(): void
+    /**
+     * @return PDOStatementInterface
+     */
+    private function statement(): PDOStatementInterface
     {
-        if ($this->orig === null) {
-            throw new DomainException("there is no created connection with a database");
-        }
+       return $this->stmt ?? new PDOStatement();
     }
 }

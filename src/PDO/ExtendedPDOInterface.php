@@ -14,7 +14,6 @@ declare(strict_types=1);
 namespace Acc\Core\PersistentData\PDO;
 
 use Acc\Core\PrinterInterface;
-use PDOException;
 use PDO;
 
 /**
@@ -55,26 +54,27 @@ interface ExtendedPDOInterface extends PrinterInterface
     public function trx(callable $callee);
 
     /**
+     * @param PDOStatementInterface $stmt Defines a statement that will be used with future requests
+     * @return ExtendedPDOInterface
+     */
+    public function withStatement(PDOStatementInterface $stmt): ExtendedPDOInterface;
+
+    /**
      * Prepares a statement for execution and returns a statement object
      * @param string $query
-     * @param PDOStatementInterface|null $stmt An optional object that will be used for returning a result set
      * @return PDOStatementInterface
-     * @throws PDOException
      */
-    public function prepared(string $query, PDOStatementInterface $stmt = null): PDOStatementInterface;
+    public function prepared(string $query): PDOStatementInterface;
 
     /**
      *  Executes an SQL statement, returning a result set as an object supports PDOStatementInterface contract
      * @param string $query
-     * @param PDOStatementInterface|null $stmt An optional object that will be used for returning a result set
      * @return PDOStatementInterface
-     * @throws PDOException
      */
-    public function queried(string $query, PDOStatementInterface $stmt = null): PDOStatementInterface;
+    public function queried(string $query): PDOStatementInterface;
 
     /**
      * Returns an vanilla PDO object
-     * @inheritDoc
      * @return PDO;
      */
     public function vanilla(): PDO;

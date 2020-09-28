@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Acc\Core\PersistentData\PDO\Sql;
+namespace Acc\Core\PersistentData\PDO\Vanilla\Sql;
 
 use Acc\Core\Registry\BeansInterface;
 use Acc\Core\PersistentData\PDO;
@@ -41,7 +41,7 @@ final class PositionValue implements ValueInterface
     {
         $val = null;
         if ($this->p->defined($this->n)) {
-            $val = call_user_func($this->s, $this->p->fetch($this->n));
+            $val = call_user_func($this->s, $this->p->pulled($this->n));
         } else {
             if ($this->f !== null) {
                 $val = call_user_func($this->f, $this->n);
