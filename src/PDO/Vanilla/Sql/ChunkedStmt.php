@@ -3,25 +3,34 @@ declare(strict_types=1);
 
 namespace Acc\Core\PersistentData\PDO\Vanilla\Sql;
 
+use Acc\Core\Registry\RegistryInterface;
+use Acc\Core\Value\ValueInterface;
+use Acc\Core\Value\Vanilla\Value;
 use LogicException;
 
 final class ChunkedStmt implements ChunkedStmtInterface
 {
+    /**
+     * @var self|null
+     */
     private ?self $up = null;
-
     /**
      * @var array
      */
     private array $q;
-
     /**
      * @var callable|null
      */
     private $processor;
+    /**
+     * @var ValueInterface|null
+     */
+    private ?ValueInterface $value;
 
-    public function __construct()
+    public function __construct(?ValueInterface $value = null)
     {
         $this->q = [];
+        $this->value = $value;
         $this->processor = null;
     }
 
@@ -56,25 +65,30 @@ final class ChunkedStmt implements ChunkedStmtInterface
         return $obj;
     }
 
-    public function processed(): string
+    public function processed(RegistryInterface $beans): ValueInterface
     {
-        $p =
-            $this->processor ??
-                function (array $v): string {
-                    return implode(" ", $v);
-                };
-        return
-            call_user_func(
-                $p,
+        $ar =
+            array_map(
+                function (ValueInterface $v) {
+                    return $v->fetch();
+                },
                 array_filter(
                     array_map(
-                        function (ChunkInterface $c) {
-                            return $c->processed();
+                        function (ChunkInterface $c) use ($beans) {
+                            return $c->processed($beans);
                         },
                         $this->q
-                    )
+                    ),
+                    function (ValueInterface $v) {
+                        return $v->defined();
+                    }
                 )
             );
+        return
+            ($this->value ?? new Value())
+                ->assign(
+                    $this->processor === null? $ar: call_user_func($this->processor, $ar)
+                );
     }
 
     private function blueprinted(): self
